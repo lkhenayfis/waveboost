@@ -9,6 +9,17 @@
     ]
   },
   "Packages": {
+    "DBI": {
+      "Package": "DBI",
+      "Version": "1.2.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "methods"
+      ],
+      "Hash": "065ae649b05f1ff66bb0c793107508f5"
+    },
     "R6": {
       "Package": "R6",
       "Version": "2.5.1",
@@ -18,6 +29,18 @@
         "R"
       ],
       "Hash": "470851b6d5d0ac559e9d01bb352b4021"
+    },
+    "RPostgreSQL": {
+      "Package": "RPostgreSQL",
+      "Version": "0.7-7",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "DBI",
+        "R",
+        "methods"
+      ],
+      "Hash": "3a54b351549eeaf64cd27b202ed16a18"
     },
     "arrow": {
       "Package": "arrow",
@@ -161,6 +184,27 @@
         "methods"
       ],
       "Hash": "6ea17a32294d8ca00455825ab0cf71b9"
+    },
+    "dbrenovaveis": {
+      "Package": "dbrenovaveis",
+      "Version": "0.7.0.9999",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "dbrenovaveis",
+      "RemoteUsername": "lkhenayfis",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "180f869cb184453804db732a100ddeecfcc491b5",
+      "Requirements": [
+        "DBI",
+        "R",
+        "RPostgreSQL",
+        "cli",
+        "data.table",
+        "jsonlite",
+        "xfun"
+      ],
+      "Hash": "eec9b07991e7df65a0a54750e7d642b4"
     },
     "digest": {
       "Package": "digest",
@@ -337,6 +381,19 @@
         "stats"
       ],
       "Hash": "c0e49a9760983e81e55cdd9be92e7182"
+    },
+    "xfun": {
+      "Package": "xfun",
+      "Version": "0.50",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "grDevices",
+        "stats",
+        "tools"
+      ],
+      "Hash": "44ab88837d3f8dfc66a837299b887fa6"
     },
     "xml2": {
       "Package": "xml2",
