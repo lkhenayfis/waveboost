@@ -20,7 +20,7 @@ le_temp_prev <- function(area, janela = "1900/3000", horizontes = seq(48)) {
     dt[, h := as.numeric(h / 3600)] # de segundos para horas à frente
 
     dt <- dt[h %in% horizontes]
-    setorder(dt, h, din_referencia)
+    setorder(dt, din_origemprevisaoutc)
 
     return(dt)
 }
