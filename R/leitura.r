@@ -4,17 +4,17 @@ library(arrow)
 library(data.table)
 
 le_carga_hist <- function(area, janela = "1900/3000") {
-    dt <- leitor_dado_historico(area, janela, "CARGAHIST")
+    dt <- leitor_dado_historico(area, janela, tipo = "CARGAHIST")
     return(dt)
 }
 
 le_temp_hist <- function(area, janela = "1900/3000") {
-    dt <- leitor_dado_historico(area, janela, "TEMPHIST")
+    dt <- leitor_dado_historico(area, janela, tipo = "TEMPHIST")
     return(dt)
 }
 
 le_temp_prev <- function(area, janela = "1900/3000", horizontes = seq(48)) {
-    dt <- leitor_dado_historico(area, janela, "TEMPPREVHIST")
+    dt <- leitor_dado_historico(area, janela, tipo = "TEMPPREVHIST")
 
     dt[, h := din_referencia - as.POSIXct(din_origemprevisaoutc)]
     dt[, h := as.numeric(h / 3600)] # de segundos para horas à frente
@@ -44,7 +44,7 @@ le_horarioverao <- function(area, janela = "1900/3000") {
 
 # HELPERS ------------------------------------------------------------------------------------------
 
-leitor_dado_historico <- function(area, janela,
+leitor_dado_historico <- function(area, janela, coluna = "din_referencia",
     tipo = c("CARGAHIST", "TEMPHIST", "TEMPPREVHIST", "FERIADOS", "HORAVERAO"),
     early = FALSE) {
 
@@ -52,7 +52,7 @@ leitor_dado_historico <- function(area, janela,
 
     object <- paste0("/prevcarga/decks/", area, "/", tipo, ".csv.gz")
     dt <- aws.s3::s3read_using(fread, object = object, bucket = "s3://ons-dl-prod-containers")
-    dt <- aplica_subset_data(dt, janela)
+    dt <- aplica_subset_data(dt, janela, coluna)
 
     if (early) return(dt)
 
@@ -69,11 +69,20 @@ guess_col_valor <- function(tipo) {
         TEMPPREVHIST = "val_tmp")
 }
 
-aplica_subset_data <- function(dt, janela) {
+aplica_subset_data <- function(dt, janela, coluna = "din_referencia") {
     janela <- dbrenovaveis:::parsedatas(janela, "", FALSE)
     janela <- sapply(seq(2), function(i) janela[[i]][i])
 
-    dt <- dt[(din_referencia >= janela[1]) & (din_referencia < janela[2])]
+    # se 'coluna' for uma coluna de data, tz vai voltar NULL
+    # a estrategia de atribuir um elemento $tz na lista, quando tz e NULL, nao faz nada e passa sem
+    # dar erro
+    cc    <- list(as.POSIXct, janela)
+    cc$tz <- attr(dt[[coluna]][1], "tzone")
+    janela <- eval(as.call(cc))
+
+    expr <- paste0(coluna, ">= janela[1] & ", coluna, "< janela[2]")
+    expr <- str2expression(expr)
+    dt <- dt[eval(expr)]
 
     return(dt)
 }
