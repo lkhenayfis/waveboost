@@ -1,8 +1,10 @@
 library(dbrenovaveis)
 library(LoadServices)
 library(data.table)
+library(arrow)
+library(aws.s3)
 
-le_carga_historica <- function(area, janela = "1900/3000") {
+le_carga_historica <- function(area, janela = "1900/3000", simplificado = TRUE) {
     area   <- valida_codigo_area(area)
     janela <- expande_janela(janela, as_date = TRUE)
 
@@ -12,24 +14,42 @@ le_carga_historica <- function(area, janela = "1900/3000") {
     parse_coluna_date(dt, "dat_referencia")
     parse_coluna_posix(dt, "din_referenciautc")
 
+    if (simplificado) dt <- dt[, .(cod_areacarga, din_referenciautc, val_cargaglobalcons)]
+
     return(dt)
 }
 
-le_temp_hist <- function(area, janela = "1900/3000") {
-    dt <- leitor_dado_historico(area, janela, tipo = "TEMPHIST")
+le_temperatura_historica <- function(area, janela = "1900/3000") {
+    area <- valida_codigo_area(area)
+    id   <- area2id(area)
+    janela <- expande_janela(janela, as_date = FALSE)
+
+    dt <- TemperaturaPonderada(id, janela[1], janela[2])
+    setDT(dt)
+
+    parse_coluna_posix(dt, "DinOcorrencia")
+
     return(dt)
 }
 
-le_temp_prev <- function(area, janela = "1900/3000", horizontes = seq(48)) {
-    dt <- leitor_dado_historico(area, janela, tipo = "TEMPPREVHIST")
+le_temperatura_prevista <- function(area, janela = "1900/3000", referencia = 1) {
+    area <- valida_codigo_area(area)
+    id   <- area2id(area)
+    janela <- expande_janela(janela, as_date = FALSE)
+    horizontes <- referencia2horizontes(referencia)
 
-    dt[, h := din_referencia - as.POSIXct(din_origemprevisaoutc)]
-    dt[, h := as.numeric(h / 3600)] # de segundos para horas à frente
+    dts <- lapply(horizontes, function(h) TemperaturaPrevistaDelay(id, janela[1], janela[2], h))
+    dts <- lapply(dts, as.data.table)
 
-    dt <- dt[h %in% horizontes]
-    setorder(dt, din_origemprevisaoutc)
+    dts <- rbindlist(dts)
+    dts[, DinReferencia := DinOrigem + referencia * (48 * 1800)]
+    setcolorder(dts, c(1, 2, 5, 3, 4))
 
-    return(dt)
+    parse_coluna_date(dts, "DinOrigem")
+    parse_coluna_date(dts, "DinReferencia")
+    parse_coluna_posix(dts, "DinOcorrencia")
+
+    return(dts)
 }
 
 le_feriados <- function(area, janela = "1900/3000") {
@@ -49,7 +69,7 @@ le_horarioverao <- function(area, janela = "1900/3000") {
     return(dt)
 }
 
-# VALIDADADORES ------------------------------------------------------------------------------------
+# HELPERS ------------------------------------------------------------------------------------------
 
 valida_codigo_area <- function(area) {
     existe_area <- area %in% .INFO_AREAS$codigo_area
@@ -60,32 +80,9 @@ valida_codigo_area <- function(area) {
     return(area)
 }
 
-# HELPERS ------------------------------------------------------------------------------------------
+area2id <- function(area) .INFO_AREAS[.INFO_AREAS$codigo_area == area, "id_serie"]
 
-leitor_dado_historico <- function(area, janela, coluna = "din_referencia",
-    tipo = c("CARGAHIST", "TEMPHIST", "TEMPPREVHIST", "FERIADOS", "HORAVERAO"),
-    early = FALSE) {
-
-    tipo <- match.arg(tipo)
-
-    object <- paste0("/prevcarga/decks/", area, "/", tipo, ".csv.gz")
-    dt <- aws.s3::s3read_using(fread, object = object, bucket = "s3://ons-dl-prod-containers")
-    dt <- aplica_subset_data(dt, janela, coluna)
-
-    if (early) return(dt)
-
-    col_valor <- guess_col_valor(tipo)
-    dt[, (col_valor) := as.numeric(sub(",", ".", get(col_valor)))]
-
-    return(dt)
-}
-
-guess_col_valor <- function(tipo) {
-    switch(tipo,
-        CARGAHIST = "val_carga",
-        TEMPHIST = "val_tmp",
-        TEMPPREVHIST = "val_tmp")
-}
+referencia2horizontes <- function(ref) ref + 0:1
 
 expande_janela <- function(janela, as_date) {
     janela <- dbrenovaveis:::parsedatas(janela, "", FALSE)
@@ -102,6 +99,6 @@ parse_coluna_date <- function(dt, coluna) {
 }
 
 parse_coluna_posix <- function(dt, coluna) {
-    dt[, (coluna) := as.POSIXct(get(coluna), "America/SaoPaulo", format = "%Y-%m-%dT%H:%M:%SZ")]
+    dt[, (coluna) := as.POSIXct(get(coluna), "UTC", format = "%Y-%m-%dT%H:%M:%SZ")]
     return(dt)
 }
