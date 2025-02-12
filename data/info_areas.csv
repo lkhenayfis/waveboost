@@ -1,0 +1,30 @@
+nome_area,codigo_area,id_serie
+Acre,AC,14
+Amapa,AP,42
+Amazonas,AM,13
+Distrito Federal,DF,12
+Espirito Santo,ES,27
+Goias,GO,28
+Maranhao,MA,37
+Mato Grosso,MT,29
+Mato Grosso do Sul,MS,4
+Minas Gerais,MG,26
+Para,PA,36
+Rio Grande do Sul,RS,1
+Rio de Janeiro,RJ,6
+Rondonia,RO,15
+Roraima,RR,55
+Santa Catarina,SC,2
+Sao Paulo,SP,5
+Subsistema Nordeste,NE,9
+Subsistema Norte,N,8
+Subsistema Sudeste/Centro-Oeste,SECO,11
+Subsistema Sul,S,10
+Alagoas-Pernambuco,ALPE,49
+Bahia Oeste,BAOE,51
+Bahia-Sergipe,BASE,48
+Ceara,CE,52
+Paraiba-Rio Grande do Norte,PBRN,50
+Parana,PR,3
+Piaui,PI,53
+Tocantins Norte,TON,40
