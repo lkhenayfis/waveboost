@@ -9,9 +9,8 @@ le_carga_historica <- function(area, janela = "1900/3000") {
     dt <- CGPeriodo(area, janela[1], janela[2], TRUE)
     setDT(dt)
 
-    dt[, dat_referencia := as.Date(dat_referencia)]
-    dt[, din_referenciautc := as.POSIXct(din_referenciautc, "America/SaoPaulo",
-            format = "%Y-%m-%dT%H:%M:%SZ")]
+    parse_coluna_date(dt, "dat_referencia")
+    parse_coluna_posix(dt, "din_referenciautc")
 
     return(dt)
 }
@@ -95,19 +94,12 @@ expande_janela <- function(janela) {
     return(janela)
 }
 
-aplica_subset_data <- function(dt, janela, coluna = "din_referencia") {
-    janela <- expande_janela(janela)
+parse_coluna_date <- function(dt, coluna) {
+    dt[, (coluna) := as.Date(get(coluna))]
+    return(dt)
+}
 
-    # se 'coluna' for uma coluna de data, tz vai voltar NULL
-    # a estrategia de atribuir um elemento $tz na lista, quando tz e NULL, nao faz nada e passa sem
-    # dar erro
-    cc    <- list(as.POSIXct, janela)
-    cc$tz <- attr(dt[[coluna]][1], "tzone")
-    janela <- eval(as.call(cc))
-
-    expr <- paste0(coluna, ">= janela[1] & ", coluna, "< janela[2]")
-    expr <- str2expression(expr)
-    dt <- dt[eval(expr)]
-
+parse_coluna_posix <- function(dt, coluna) {
+    dt[, (coluna) := as.POSIXct(get(coluna), "America/SaoPaulo", format = "%Y-%m-%dT%H:%M:%SZ")]
     return(dt)
 }
