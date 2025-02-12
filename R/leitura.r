@@ -42,6 +42,17 @@ le_horarioverao <- function(area, janela = "1900/3000") {
     return(dt)
 }
 
+# VALIDADADORES ------------------------------------------------------------------------------------
+
+valida_codigo_area <- function(area) {
+    existe_area <- area %in% .INFO_AREAS$codigo_area
+    if (!existe_area) {
+        stop("argumento 'area' nao existe na base de dados")
+    }
+
+    return(area)
+}
+
 # HELPERS ------------------------------------------------------------------------------------------
 
 leitor_dado_historico <- function(area, janela, coluna = "din_referencia",
@@ -69,9 +80,15 @@ guess_col_valor <- function(tipo) {
         TEMPPREVHIST = "val_tmp")
 }
 
-aplica_subset_data <- function(dt, janela, coluna = "din_referencia") {
+expande_janela <- function(janela) {
     janela <- dbrenovaveis:::parsedatas(janela, "", FALSE)
-    janela <- sapply(seq(2), function(i) janela[[i]][i])
+    janela <- sapply(seq_len(2), function(i) janela[[i]][i])
+    janela <- sub(" .*", "", janela)
+    return(janela)
+}
+
+aplica_subset_data <- function(dt, janela, coluna = "din_referencia") {
+    janela <- expande_janela(janela)
 
     # se 'coluna' for uma coluna de data, tz vai voltar NULL
     # a estrategia de atribuir um elemento $tz na lista, quando tz e NULL, nao faz nada e passa sem
