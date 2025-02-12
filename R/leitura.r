@@ -4,7 +4,7 @@ library(data.table)
 
 le_carga_historica <- function(area, janela = "1900/3000") {
     area   <- valida_codigo_area(area)
-    janela <- expande_janela(janela)
+    janela <- expande_janela(janela, as_date = TRUE)
 
     dt <- CGPeriodo(area, janela[1], janela[2], TRUE)
     setDT(dt)
@@ -87,10 +87,12 @@ guess_col_valor <- function(tipo) {
         TEMPPREVHIST = "val_tmp")
 }
 
-expande_janela <- function(janela) {
+expande_janela <- function(janela, as_date) {
     janela <- dbrenovaveis:::parsedatas(janela, "", FALSE)
     janela <- sapply(seq_len(2), function(i) janela[[i]][i])
-    janela <- sub(" .*", "", janela)
+
+    if (as_date) janela <- sub(" .*", "", janela)
+
     return(janela)
 }
 
