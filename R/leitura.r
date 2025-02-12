@@ -1,10 +1,18 @@
 library(dbrenovaveis)
-library(aws.s3)
-library(arrow)
+library(LoadServices)
 library(data.table)
 
-le_carga_hist <- function(area, janela = "1900/3000") {
-    dt <- leitor_dado_historico(area, janela, tipo = "CARGAHIST")
+le_carga_historica <- function(area, janela = "1900/3000") {
+    area   <- valida_codigo_area(area)
+    janela <- expande_janela(janela)
+
+    dt <- CGPeriodo(area, janela[1], janela[2], TRUE)
+    setDT(dt)
+
+    dt[, dat_referencia := as.Date(dat_referencia)]
+    dt[, din_referenciautc := as.POSIXct(din_referenciautc, "America/SaoPaulo",
+            format = "%Y-%m-%dT%H:%M:%SZ")]
+
     return(dt)
 }
 
