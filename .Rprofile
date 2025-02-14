@@ -1,4 +1,4 @@
 source("renv/activate.R")
 
+.INFO_AREAS <- utils::read.csv("./data/info_areas.csv")
 LoadServices::AmbienteAtivo("PRD")
-.INFO_AREAS <- read.csv("data/info_areas.csv")
