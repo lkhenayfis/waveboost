@@ -4,7 +4,7 @@ library(data.table)
 library(arrow)
 library(aws.s3)
 
-le_carga_historica <- function(area, janela = "1900/3000", simplificado = TRUE) {
+get_carga_historica <- function(area, janela = "1900/3000", simplificado = TRUE) {
     area   <- valida_codigo_area(area)
     janela <- expande_janela(janela, as_date = TRUE)
 
@@ -19,7 +19,7 @@ le_carga_historica <- function(area, janela = "1900/3000", simplificado = TRUE) 
     return(dt)
 }
 
-le_temperatura_historica <- function(area, janela = "1900/3000") {
+get_temperatura_historica <- function(area, janela = "1900/3000") {
     area <- valida_codigo_area(area)
     id   <- area2id(area)
     janela <- expande_janela(janela, as_date = FALSE)
@@ -32,7 +32,7 @@ le_temperatura_historica <- function(area, janela = "1900/3000") {
     return(dt)
 }
 
-le_temperatura_prevista <- function(area, janela = "1900/3000", referencia = 1) {
+get_temperatura_prevista <- function(area, janela = "1900/3000", referencia = 1) {
     area <- valida_codigo_area(area)
     id   <- area2id(area)
     janela <- expande_janela(janela, as_date = FALSE)
@@ -52,14 +52,14 @@ le_temperatura_prevista <- function(area, janela = "1900/3000", referencia = 1) 
     return(dts)
 }
 
-le_feriados <- function(area, janela = "1900/3000") {
+get_feriados <- function(area, janela = "1900/3000") {
     dt <- aws.s3::s3read_using(fread,
         object = paste0("/prevcarga/decks/", area, "/FERIADOS.csv.gz"),
         bucket = "s3://ons-dl-prod-containers")
     return(dt)
 }
 
-le_horarioverao <- function(area, janela = "1900/3000") {
+get_horarioverao <- function(area, janela = "1900/3000") {
     dt <- aws.s3::s3read_using(fread,
         object = paste0("/prevcarga/decks/", area, "/HORAVERAO.csv.gz"),
         bucket = "s3://ons-dl-prod-containers")
