@@ -1,4 +1,5 @@
 data/banco/**
+creds-prevcarga.r
 .Renviron
 informals
 *html
