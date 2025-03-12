@@ -10,6 +10,7 @@
 #' @param x um vetor ou data.frame-like para upsample
 #' @param times frequencia de upsample, inteiro maior que 2. Veja Detalhes
 #' @param type metodo de preenchimento. Atualmente sao suportados "linear", "cubic"
+#' @param expand_right booleano indicando se deve ser extrapolado a direita
 #' @param time_col se \code{x} for data.frame-like, o nome da coluna de tempo na qual basear o
 #'     upsample
 #' @param value_col se \code{x} for data.frame-like, o nome da coluna de dados para upsample
@@ -27,14 +28,16 @@
 #' 
 #' @return objeto \code{x} upsampled para resolucao desejada
 
-upsample <- function(x, times, type = c("linear", "cubic"), ...) UseMethod("upsample")
+upsample <- function(x, times, type = c("linear", "cubic"), expand_right = FALSE, ...) UseMethod("upsample")
 
 #' @rdname upsample
 
-upsample.numeric <- function(x, times, type = c("linear", "cubic"), ...) {
+upsample.numeric <- function(x, times, type = c("linear", "cubic"), expand_right = FALSE, ...) {
     type <- match.arg(type)
-    fun    <- str2lang(paste0("upsample_", type))
-    upsampled <- as.call(c(list(fun, x, times), list(...)))
+    fun  <- str2lang(paste0("upsample_", type))
+    upsampled <- match.call()
+    upsampled[[1]] <- fun
+    upsampled[["type"]] <- NULL
     upsampled <- eval(upsampled, parent.frame(), parent.frame())
 
     return(upsampled)
@@ -42,17 +45,17 @@ upsample.numeric <- function(x, times, type = c("linear", "cubic"), ...) {
 
 #' @rdname upsample
 
-upsample.Date <- function(x, times, type = c("linear", "cubic"), ...) {
-    out <- upsample.numeric(as.numeric(x), times, type, ...)
+upsample.Date <- function(x, times, type = c("linear", "cubic"), expand_right = FALSE, ...) {
+    out <- upsample.numeric(as.numeric(x), times, type, expand_right, ...)
     out <- as.Date(out)
     return(out)
 }
 
 #' @rdname upsample
 
-upsample.POSIXt <- function(x, times, type = c("linear", "cubic"), ...) {
+upsample.POSIXt <- function(x, times, type = c("linear", "cubic"), expand_right = FALSE, ...) {
     ref <- x[1]
-    out <- upsample.numeric(as.numeric(x), times, type, ...)
+    out <- upsample.numeric(as.numeric(x), times, type, expand_right, ...)
     out <- as.POSIXct(out, attr(ref, "tzone"))
     return(out)
 }
@@ -60,10 +63,10 @@ upsample.POSIXt <- function(x, times, type = c("linear", "cubic"), ...) {
 #' @rdname upsample
 
 upsample.list <- function(x, times, time_col, value_col,
-    type = c("linear", "cubic"), ...) {
+    type = c("linear", "cubic"), expand_right = FALSE, ...) {
 
-    time_col_ds  <- upsample(x[[time_col]], times, "linear", ...)
-    value_col_ds <- upsample(x[[value_col]], times, type, ...)
+    time_col_ds  <- upsample(x[[time_col]], times, "linear", expand_right, ...)
+    value_col_ds <- upsample(x[[value_col]], times, type, expand_right, ...)
 
     out <- list(time_col_ds, value_col_ds)
     names(out) <- c(time_col, value_col)
@@ -74,9 +77,9 @@ upsample.list <- function(x, times, time_col, value_col,
 #' @rdname upsample
 
 upsample.data.frame <- function(x, times, time_col, value_col,
-    type = c("linear", "cubic"), ...) {
+    type = c("linear", "cubic"), expand_right = FALSE, ...) {
 
-    out <- upsample.list(x, times, time_col, value_col, type, ...)
+    out <- upsample.list(x, times, time_col, value_col, type, expand_right, ...)
     out <- as.data.frame(out)
     return(out)
 }
@@ -84,12 +87,12 @@ upsample.data.frame <- function(x, times, time_col, value_col,
 #' @rdname upsample
 
 upsample.data.table <- function(x, times, time_col, value_col,
-    type = c("linear", "cubic"), by = "", ...) {
+    type = c("linear", "cubic"), expand_right = FALSE, by = "", ...) {
 
     out <- x[,
         upsample.list(
             .(get(time_col), get(value_col)),
-            times, 1, 2, type, ...),
+            times, 1, 2, type, expand_right, ...),
         by = by]
 
     names <- names(out)
@@ -100,10 +103,17 @@ upsample.data.table <- function(x, times, time_col, value_col,
     return(out)
 }
 
-upsample_linear <- function(x, times, ...) {
-    approx(seq_along(x), x, seq(1, length(x), times^-1), ...)$y
-}
+upsample_linear <- function(x, times, expand_right, ...) {
 
-upsample_cubic <- function(x, times, ...) {
-    spline(seq_along(x), x, xout = seq(1, length(x), times^-1), ...)$y
+    xout <- seq(1, length(x), times^-1)
+    inner <- approx(seq_along(x), x, xout, rule = 2, ...)$y
+
+    if (expand_right) {
+        x_outer <- c(tail(x, 1), tail(x, 1) + diff(tail(x, 2)))
+        outer <- approx(seq_along(x_outer), x_outer, seq(1, 2, times^-1), rule = 2, ...)$y
+        outer <- outer[-c(1, length(outer))]
+        inner <- c(inner, outer)
+    }
+
+    return(inner)
 }
