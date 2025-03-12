@@ -1,4 +1,8 @@
 source("renv/activate.R")
 
-.INFO_AREAS <- utils::read.csv("./data/info_areas.csv")
-LoadServices::AmbienteAtivo("PRD")
+library(dbrenovaveis)
+
+local({
+    conn <- conectamock("s3://ons-pem-historico/carga/estudos-prevcarga-dessem/schema.json")
+    assign(".CONEXAO_BANCO", conn, envir = .GlobalEnv)
+})
