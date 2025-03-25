@@ -64,7 +64,7 @@ dir.create(uri)
 feriados <- lapply(areas$codigo_area, get_feriados, janela = JANELA)
 feriados <- rbindlist(feriados)
 colnames(feriados) <- c("codigo_area", "data", "tipo_dia_especial", "codigo_prevcarga", "codigo_simplificado")
-feriados <- feriados[(data >= datahora_inicio) & (data <= datahora_fim)]
+#feriados <- feriados[(data >= datahora_inicio) & (data <= datahora_fim)]
 write_parquet(feriados, file.path(uri, "feriados.parquet.gzip"))
 
 schema <- list(
