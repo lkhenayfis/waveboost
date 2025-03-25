@@ -5,7 +5,8 @@ get_areas <- function(conn = .CONEXAO_BANCO) {
 }
 
 get_feriados <- function(areas, conn = .CONEXAO_BANCO) {
-    getfromdb(conn, "feriados", codigo_area = areas)
+    d <- getfromdb(conn, "feriados", codigo_area = areas)
+    d[, simples := rep(1, .N)]
 }
 
 get_carga_observada <- function(areas, janela = "2020/2024", conn = .CONEXAO_BANCO) {
