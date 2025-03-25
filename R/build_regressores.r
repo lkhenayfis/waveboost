@@ -1,3 +1,7 @@
+library(shapeshiftr)
+library(data.table)
+library(zoo)
+
 # SINGLE SHOT --------------------------------------------------------------------------------------
 
 #' Regressores Quantitativos Para Modelos Single Shot
