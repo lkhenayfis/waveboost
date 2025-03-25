@@ -136,3 +136,63 @@ get_start <- function(hora, vec) {
     start <- grep(hora, horas)
     return(start)
 }
+
+#' Adiciona Regressores Qualitativos
+#' 
+#' Compoe adiciona informacao de feriados e timefeatures relevantes a regressores quantitativos
+#' 
+#' \code{timefeatures} deve ser um vetor de strings indicando funcoes a serem aplicadas a coluna de
+#' indice de \code{reg}. Funcoes de pacotes especificos devem ser prefixadas de \code{"pacote::"}
+#' para evitar erros. Funcoes custom tambem podem ser utilizadas, contanto que tenham sido 
+#' carregadas no ambiente. Por padrao sao geradas features indicando dia na semana e hora numerica
+#' 
+#' @param reg data.table de regressores quantitativos ja montado por uma build_regs_quant
+#' @param feriados data.table de feriados lido por \code{get_feriados}
+#' @param pre_feriado,pos_feriado booleanos indicando se marcadores de dias antes e depois de 
+#'     feriados devem ser adicionados
+#' @param modo qual codificacao de feriados utilizar; um de
+#'     \code{c("simples", "tipo_dia_especial", "codigo_prevcarga", "codigo_simplificado")}
+#' @param timefeatures vetor de transformacoes de timestamp Veja Detalhes
+
+add_regs_quali <- function(reg, feriados,
+    pre_feriado = TRUE, pos_feriado = TRUE,
+    modo = c("simples", "tipo_dia_especial", "codigo_prevcarga", "codigo_simplificado"),
+    timefeatures = c("data.table::wday", "hourmin2num")) {
+
+    reg <- add_timefeatures(reg, timefeatures)
+    reg <- add_feriados(reg, feriados, pre_feriado, pos_feriado, modo)
+
+    return(reg)
+}
+
+add_feriados <- function(reg, feriados, pre, pos, modo) {
+    modo <- match.arg(modo)
+    feriados <- feriados[, .("date" = data, "feriado" = get(modo))]
+
+    regdates <- reg[, .("date" = unique(as.Date(index)))]
+    regdates <- merge(regdates, feriados, by = "date", all = TRUE)
+    regdates[is.na(feriado), feriado := 0]
+
+    if (pre) regdates[, pre_feriado := shift(feriado, -1)]
+    if (pos) regdates[, pos_feriado := shift(feriado,  1)]
+
+    reg[, merge_col := as.Date(index)]
+    reg <- merge(reg, regdates, by.x = "merge_col", by.y = "date", all.x = TRUE)
+    reg[, merge_col := NULL]
+
+    return(reg)
+}
+
+add_timefeatures <- function(reg, timefeatures) {
+    new <- lapply(timefeatures, function(f) {
+        cc <- list(str2lang(f), reg$index)
+        eval(as.call(cc))
+    })
+    names(new) <- timefeatures
+    new <- as.data.table(new)
+
+    out <- cbind(reg, new)
+    return(out)
+}
+
+hourmin2num <- function(posix) hour(posix) + minute(posix) / 60
