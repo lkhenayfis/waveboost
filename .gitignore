@@ -1,4 +1,5 @@
 data/banco/**
+data/*parquet.gzip
 creds-prevcarga.r
 .Renviron
 informals
