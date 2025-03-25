@@ -160,13 +160,12 @@ add_regs_quali <- function(reg, feriados,
     timefeatures = c("data.table::wday", "hourmin2num")) {
 
     reg <- add_timefeatures(reg, timefeatures)
-    reg <- add_feriados(reg, feriados, pre_feriado, pos_feriado, modo)
+    reg <- add_feriados(reg, feriados, pre_feriado, pos_feriado, match.arg(modo))
 
     return(reg)
 }
 
 add_feriados <- function(reg, feriados, pre, pos, modo) {
-    modo <- match.arg(modo)
     feriados <- feriados[, .("date" = data, "feriado" = get(modo))]
 
     regdates <- reg[, .("date" = unique(as.Date(index)))]
