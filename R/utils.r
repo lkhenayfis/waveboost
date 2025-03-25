@@ -105,6 +105,12 @@ upsample.data.table <- function(x, times, time_col, value_col,
 
 upsample_linear <- function(x, times, expand_right, ...) {
 
+    if (all(is.na(x))) {
+        fill <- ifelse(inherits(x, "numeric"), NA_real_, NA_integer_)
+        out <- rep(fill, length(x) * times)
+        return(out)
+    }
+
     xout <- seq(1, length(x), times^-1)
     inner <- approx(seq_along(x), x, xout, rule = 2, ...)$y
 
