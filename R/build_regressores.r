@@ -187,7 +187,7 @@ add_timefeatures <- function(reg, timefeatures) {
         cc <- list(str2lang(f), reg$index)
         eval(as.call(cc))
     })
-    names(new) <- timefeatures
+    names(new) <- sub("::", "_", timefeatures)
     new <- as.data.table(new)
 
     out <- cbind(reg, new)
