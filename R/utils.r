@@ -1,4 +1,6 @@
 
+sample2 <- function(x, size) if (length(x) == 1) return(x) else sample(x, size)
+
 #' Upsample De Dados
 #' 
 #' Rebaixa um dado \code{x} para resolucao \code{times} vezes menor
