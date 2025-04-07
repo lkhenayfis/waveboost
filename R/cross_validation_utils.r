@@ -120,20 +120,21 @@ block2paths <- function(blocks) {
 get_H1_with_H2 <- function(paths, h2 = 1, s = 1) {
     H2_by_H1 <- attr(paths, "H2_by_H1")
     has_H2   <- sapply(H2_by_H1, function(i) h2 %in% i)
+    H1_with_h2 <- attr(paths, "H1")[has_H2]
 
     # garante que o proximo nivel h1 seja um dos menos utilizados ate entao
-    unused_h1 <- paths[, sum(used), by = H1]
+    unused_h1 <- paths[H1 %in% H1_with_h2, sum(used), by = H1]
     unused_h1 <- unused_h1[, V1 <= min(V1)]
 
     # evita escolher um h1 cujo par (h2,s) ja tenha sido usado anteriormente
     unused_h2_in_h1 <- paths[(H2 == h2) & (S == s), !used]
 
-    available <- has_H2 & unused_h1 & unused_h2_in_h1
-    if (sum(available) == 0) available <- has_H2 & unused_h1
+    available <- unused_h1 & unused_h2_in_h1
+    if (sum(available) == 0) available <- unused_h1
 
-    H1_with_H2 <- attr(paths, "H1")[available]
+    choices <- H1_with_h2[available]
 
-    return(H1_with_H2)
+    return(choices)
 }
 
 check_reset_paths <- function(paths) {
