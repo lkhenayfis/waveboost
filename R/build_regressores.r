@@ -147,20 +147,25 @@ get_start <- function(hora, vec) {
 #' carregadas no ambiente. Por padrao sao geradas features indicando dia na semana e hora numerica
 #' 
 #' @param reg data.table de regressores quantitativos ja montado por uma build_regs_quant
-#' @param feriados data.table de feriados lido por \code{get_feriados}
+#' @param feriados opcional, data.table de feriados lido por \code{get_feriados}
 #' @param pre_feriado,pos_feriado booleanos indicando se marcadores de dias antes e depois de 
 #'     feriados devem ser adicionados
 #' @param modo qual codificacao de feriados utilizar; um de
 #'     \code{c("simples", "tipo_dia_especial", "codigo_prevcarga", "codigo_simplificado")}
-#' @param timefeatures vetor de transformacoes de timestamp Veja Detalhes
+#' @param timefeatures opcional, vetor de transformacoes de timestamp (NULL faz nada). Veja Detalhes
 
-add_regs_quali <- function(reg, feriados,
+add_regs_quali <- function(reg, feriados = NULL,
     pre_feriado = TRUE, pos_feriado = TRUE,
     modo = c("simples", "tipo_dia_especial", "codigo_prevcarga", "codigo_simplificado"),
     timefeatures = c("data.table::wday", "hourmin2num")) {
 
-    reg <- add_timefeatures(reg, timefeatures)
-    reg <- add_feriados(reg, feriados, pre_feriado, pos_feriado, match.arg(modo))
+    if (!is.null(timefeatures)) {
+        reg <- add_timefeatures(reg, timefeatures)
+    }
+
+    if (!is.null(feriados)) {
+        reg <- add_feriados(reg, feriados, pre_feriado, pos_feriado, match.arg(modo))
+    }
 
     return(reg)
 }
