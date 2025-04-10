@@ -157,7 +157,7 @@ get_start <- function(hora, vec) {
 add_regs_quali <- function(reg, feriados = NULL,
     pre_feriado = TRUE, pos_feriado = TRUE,
     modo = c("simples", "tipo_dia_especial", "codigo_prevcarga", "codigo_simplificado"),
-    timefeatures = c("data.table::wday", "hourmin2num")) {
+    timefeatures = c("data.table::wday", "nhour")) {
 
     if (!is.null(timefeatures)) {
         reg <- add_timefeatures(reg, timefeatures)
@@ -199,4 +199,4 @@ add_timefeatures <- function(reg, timefeatures) {
     return(out)
 }
 
-hourmin2num <- function(posix) hour(posix) + minute(posix) / 60
+nhour <- function(posix) hour(posix) + minute(posix) / 60 + second(posix) / 3600

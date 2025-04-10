@@ -41,7 +41,7 @@ data_test  <- data[
     datahora <  as.POSIXct("2024-11-01 00:00:00", "GMT")
 ]
 
-pesos <- ifelse(hourmin2num(data_train$datahora) %between% c(18.5, 21.5), 48 / 7, 1)
+pesos <- ifelse(nhour(data_train$datahora) %between% c(18.5, 21.5), 48 / 7, 1)
 pesos <- pesos / sum(pesos)
 
 dataset_train <- lgb.Dataset(
@@ -137,7 +137,7 @@ for (i in seq_len(nrow(CV_PARAMS))) {
     dpred <- cbind(data_test[, .(datahora)], carga = pred)
 
     d_erro <- merge(dpred, carga_obs, by = "datahora")
-    d_erro[, hora := hourmin2num(datahora)]
+    d_erro[, hora := nhour(datahora)]
     CV_PARAMS$valid_mape[i] <- d_erro[, mean(abs(carga.y - carga.x) / carga.y)]
     CV_PARAMS$valid_mape_ponta[i] <- d_erro[hora %between% c(18.5, 21.5), mean(abs(carga.y - carga.x) / carga.y)]
     CV_PARAMS$valid_rmse[i] <- d_erro[, sqrt(mean((carga.y - carga.x)^2))]
@@ -171,7 +171,7 @@ dpred <- cbind(data_test[, .(datahora)], carga = pred)
 d_erro <- merge(dpred, carga_obs, by = "datahora")
 d_erro[, mean(abs(carga.y - carga.x) / carga.y)]
 
-d_erro[, hora := hourmin2num(datahora)]
+d_erro[, hora := nhour(datahora)]
 d_erro[hora %between% c(18.5, 21.5), mean(abs(carga.y - carga.x) / carga.y)]
 
 ggplot() +
