@@ -1,4 +1,4 @@
-data/banco/**
+data/
 out/** */
 data/*parquet.gzip
 creds-prevcarga.r
