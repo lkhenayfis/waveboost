@@ -5,7 +5,8 @@ library(data.table)
 source("data-raw/leitores-loadservices.r")
 source("creds-prevcarga.r")
 
-areas <- fread("data/info_areas.csv")
+AmbienteAtivo("PRD")
+.INFO_AREAS <- areas <- fread("data/info_areas.csv")
 
 # Roraima por algum motivo nao tem feriados // tambem e sistema isolado, nao precisa estar aqui
 areas <- areas[codigo_area != "RR"]
@@ -90,8 +91,10 @@ uri <- "data/banco/carga_observada"
 dir.create(uri)
 
 for (area in areas$codigo_area) {
-    carga <- get_carga_historica(area, JANELA, TRUE)
-    colnames(carga) <- c("codigo_area", "datahora", "carga")
+    carga <- get_carga_historica(area, JANELA, FALSE)
+    carga[, dat_referencia := NULL]
+    names(carga)[1:2] <- c("codigo_area", "datahora")
+    names(carga) <- sub("^val_", "", names(carga))
     carga <- carga[(datahora >= datahora_inicio) & (datahora <= datahora_fim)]
 
     filename <- paste0("carga_observada-codigo_area=", area, ".parquet.gzip")
@@ -103,10 +106,12 @@ schema <- list(
     description = "tabela de historico da carga verificada",
     uri = "./carga_observada",
     fileType = ".parquet.gzip",
-    columns = list(
-        list(name = "codigo_area", type = "string"),
-        list(name = "datahora", type = "datetime"),
-        list(name = "carga", type = "float")
+    columns = c(
+        list(
+            list(name = "codigo_area", type = "string"),
+            list(name = "datahora", type = "datetime")
+        ),
+        lapply(names(carga)[-(1:2)], function(i) list(name = i, type = "float"))
     ),
     partitions = list(list(name = "codigo_area", type = "string"))
 )
