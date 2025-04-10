@@ -3,10 +3,11 @@ library(arrow)
 library(data.table)
 
 source("data-raw/leitores-loadservices.r")
+source("data-raw/monta_info.r")
 source("creds-prevcarga.r")
 
 AmbienteAtivo("PRD")
-.INFO_AREAS <- areas <- fread("data/info_areas.csv")
+.INFO_AREAS <- areas <- fread("data/areasareas.csv")
 
 # Roraima por algum motivo nao tem feriados // tambem e sistema isolado, nao precisa estar aqui
 areas <- areas[codigo_area != "RR"]

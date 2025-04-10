@@ -28,4 +28,4 @@ missing_info[, id_serie := missing_dt2[reorder, id_serie]]
 
 info_areas <- rbind(info_areas, missing_info)
 
-fwrite(info_areas, "data/info_areas.csv")
+fwrite(info_areas, "data/areas.csv")
