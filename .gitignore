@@ -1,4 +1,5 @@
 data/banco/**
+out/** */
 data/*parquet.gzip
 creds-prevcarga.r
 .Renviron
