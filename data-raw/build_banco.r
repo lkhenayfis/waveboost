@@ -25,13 +25,12 @@ schema <- list(
     description = "Banco de dados para estudos em evolucoes metodologicas do prevcarga-dessem",
     version = "1.0",
     modifiedTime = Sys.time(),
-    uri = "s3://ons-pem-historico/carga/estudos-prevcarga-dessem/",
     tables = list(
-        list(name = "areas", uri = "./areas"),
-        list(name = "feriados", uri = "./feriados"),
-        list(name = "carga_observada", uri = "./carga_observada"),
-        list(name = "temperatura_observada", uri = "./temperatura_observada"),
-        list(name = "temperatura_prevista", uri = "./temperatura_prevista")
+        list(name = "areas", uri = "s3://ons-pem-historico/carga/estudos-prevcarga-dessem/areas"),
+        list(name = "feriados", uri = "s3://ons-pem-historico/carga/estudos-prevcarga-dessem/feriados"),
+        list(name = "carga_observada", uri = "s3://ons-pem-historico/carga/estudos-prevcarga-dessem/carga_observada"),
+        list(name = "temperatura_observada", uri = "s3://ons-pem-historico/carga/estudos-prevcarga-dessem/temperatura_observada"),
+        list(name = "temperatura_prevista", uri = "s3://ons-pem-historico/carga/estudos-prevcarga-dessem/temperatura_prevista")
     )
 )
 
