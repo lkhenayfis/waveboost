@@ -55,7 +55,8 @@ upsample_temperatura <- function(dt, tipo = c("obs", "prev")) {
 build_carga <- function(dt, hora_execucao, L) {
     start <- get_start(hora_execucao, head(dt$datahora, 48))
 
-    out <- slice(dt, "carga", "datahora", L = seq(-L + 1, 0), start = start, step = 48)
+    out <- slice(dt, "cargaglobalcons", "datahora", L = seq(-L + 1, 0), start = start, step = 48,
+        names = "carga")
     out <- dwt(out, "carga", filter = "haar")
     out <- lapply(seq_len(48), function(i) {
         delta <- 48 + i - start
