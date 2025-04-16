@@ -34,7 +34,9 @@ build_regs_quant_singleshot <- function(
     temp_obs  <- upsample_temperatura(temp_obs, "obs")
     temp_prev <- upsample_temperatura(temp_prev, "prev")
 
-    reg_carga <- build_carga(carga_obs, hora_execucao, L_carga)
+    reg_carga <- build_lagged_reg(carga_obs, "cargaglobalcons", L_carga, hora_execucao)
+    reg_carga <- replicate_slice_day_ahead(reg_carga)
+
     reg_temp  <- build_temp(temp_obs, temp_prev, hora_execucao, L_temperatura, rolling)
 
     reg_carga <- as.data.table(reg_carga)
@@ -52,21 +54,74 @@ upsample_temperatura <- function(dt, tipo = c("obs", "prev")) {
     upsample(dt, 2, time_col = time_col, value_col = "temperatura", by = by, expand_right = TRUE)
 }
 
-build_carga <- function(dt, hora_execucao, L) {
-    start <- get_start(hora_execucao, head(dt$datahora, 48))
+build_lagged_reg <- function(dt, value_col, max_lag,
+    start_time = "07:30:00", time_col = "datahora",
+    transform = function(x) dwt(x, value_col, filter = "haar")) {
 
-    out <- slice(dt, "cargaglobalcons", "datahora", L = seq(-L + 1, 0), start = start, step = 48,
-        names = "carga")
-    out <- dwt(out, "carga", filter = "haar")
-    out <- lapply(seq_len(48), function(i) {
-        delta <- 48 + i - start
-        # corrige o indice para a hora alvo
-        attr(out, "index") <- attr(out, "index") + delta * 1800
-        out
+    start <- get_start(start_time, head(dt[[time_col]], 48))
+    slice <- slice(dt, value_col, time_col, L = seq(-max_lag + 1, 0),
+        start = start, step = 48)
+    slice <- transform(slice)
+
+    return(slice)
+}
+
+#' Repete Um Slice Para Dia Seguinte
+#' 
+#' Replica um slice 48 vezes, modificando seu indice a cada vez para uma semihora do dia seguinte
+
+replicate_slice_day_ahead <- function(slice) {
+    hours <- generate_hours()
+    slice <- force_slice_hour(slice, "00:00:00")
+    slice <- lapply(hours, function(hour) {
+        slice_i <- offset_slice_time(slice, "1 day")
+        slice_i <- force_slice_hour(slice_i, hour)
+        slice_i
     })
-    out <- Reduce(c, out)
+    slice <- Reduce(c, slice)
 
-    return(out)
+    return(slice)
+}
+
+#' Gera Vetor De Horas String A Cada Meia Hora
+
+generate_hours <- function() {
+    hours <- outer(c("00", "30"), formatC(seq(0, 23), flag = "0", width = 2), function(a, b) {
+        paste0(b, ":", a, ":00")
+    })
+    c(hours)
+}
+
+#' Deslocamento De Indice De Slice
+#' 
+#' Desloca o indice de um slice de montante igual a \code{offset}
+#' 
+#' @param slice slice cujo indice sera deslocado
+#' @param offset numero ou string (ex: "1 day", "3 weeks", etc.) indicando o offset
+
+offset_slice_time <- function(slice, offset) {
+    index <- attr(slice, "index")
+    new_index <- lapply(index, function(i) seq(i, length.out = 2, by = offset))
+    new_index <- sapply(new_index, tail, 1)
+    new_index <- as.POSIXct(new_index, tz = attr(index[1], "tzone"))
+
+    attr(slice, "index") <- new_index
+    return(slice)
+}
+
+#' Forca Indice De Slice Para Hora Especifica
+#' 
+#' Forca o horario de todos os indices num slice para \code{target_hour}, mantendo datas
+
+force_slice_hour <- function(slice, target_hour) {
+    index <- attr(slice, "index")
+    target_hour_num <- hora_str2num(target_hour)
+    hours <- nhour(index)
+    offset <- target_hour_num - hours
+    new_index <- index + (offset * 3600)
+
+    attr(slice, "index") <- new_index
+    return(slice)
 }
 
 build_temp <- function(dt_obs, dt_prev, hora_execucao, L, roll) {
