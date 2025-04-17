@@ -20,7 +20,7 @@
 #' sequencias recentes a serem incluidas no modelo. A sequencia de temperatura combinara, se
 #' necessario, dados observados e previstos. Em seguida estao
 #' 
-#' * `hora_inicio`: ultima hora do dia disponivel quando da previsao
+#' * `hora_execucao`: ultima hora do dia disponivel quando da previsao
 #' * `trend`: booleano, se deve ser modelada tendencia linear no tempo
 #' * `roll_temp`: booleano, se temperatura deve ser uma sequencia caminhando no tempo ou sempre a 
 #'     mesma contemplando todo o trajeto ate o final do dia seguinte
@@ -61,8 +61,8 @@ EGO <- function(
     model_params <- merge_lists(model_params, default_model_params_ego("M"))
     model_params <- match_fun_args(model_params, build_regs_quant_singleshot)
 
-    data <- do.call(build_cache_dataset_ego,
-        list(carga, temp_obs, temp_prev, feriados, model_params[[1]]))
+    data_quant <- do.call(build_cache_data_quant_ego,
+        list(carga, temp_obs, temp_prev, model_params[[1]]))
 
     # se model_params$trend == TRUE, tirar tendencia e reservar modelo
     # padronizar e reservar referencia da padronizacao
@@ -77,7 +77,7 @@ EGO <- function(
 #' 
 #' Busca versao cached de dado previamente montado e le, caso exista, ou monta e salva do contrario
 
-build_cache_dataset_ego <- function(carga, temp_obs, temp_prev, feriados, model_params,
+build_cache_data_quant_ego <- function(carga, temp_obs, temp_prev, model_params,
     cache_dir = Sys.getenv("CACHE_DIR", "./data/cache")) {
 
     range_datas <- range(carga$datahora)
@@ -89,7 +89,7 @@ build_cache_dataset_ego <- function(carga, temp_obs, temp_prev, feriados, model_
         data <- arrow::read_parquet(file)
     } else {
         data <- do.call(build_regs_quant_singleshot,
-            c(list(carga, temp_obs, temp_prev, feriados), model_params[[1]]))
+            c(list(carga, temp_obs, temp_prev), model_params))
         arrow::write_parquet(data, file)
     }
 
@@ -136,7 +136,7 @@ merge_lists <- function(list1, list2) {
 #' Em todos os casos a lista retornada contera os defaults
 #' 
 #' * `trend = TRUE`
-#' * `hora_inicio = "07:30:00"`
+#' * `hora_execucao = "07:30:00"`
 #' * `roll = TRUE`
 #'
 #' @param modo um de `c("M", "S", "L", "XL")` indicando o tamanho do modelo. Veja Detalhes
@@ -154,7 +154,7 @@ default_model_params_ego <- function(modo = c("M", "S", "L", "XL")) {
         L_heatindex = L_heatindex,
         L_temperatura = L_temperatura,
         trend = TRUE,
-        hora_inicio = "07:30:00",
+        hora_execucao = "07:30:00",
         roll = TRUE
     )
 
