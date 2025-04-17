@@ -1,8 +1,6 @@
 library(shapeshiftr)
 library(data.table)
 
-source("R/utils.r")
-
 # SINGLE SHOT --------------------------------------------------------------------------------------
 
 #' Regressores Quantitativos Para Modelos Single Shot

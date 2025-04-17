@@ -42,8 +42,8 @@ test_that("replicate_slice_day_ahead", {
     expect_equal(length(index_repl), length(index_slice) * 48)
 })
 
-test_that("build_lagged_reg", {
-    built <- build_lagged_reg(carga, "cargaglobalcons", 8)
+test_that("build_lagged_slice", {
+    built <- build_lagged_slice(carga, "cargaglobalcons", 8)
 
     new_1 <- c(146.2389, -157.3065, -233.2180, -133.2041, -37.2370, -539.9685, -1155.6702,
         47553.4394, 47500.7784, 46753.2541, 45989.6233, 67213.4820, 65579.1175, 93898.5476)
