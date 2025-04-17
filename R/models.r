@@ -53,9 +53,22 @@
 EGO <- function(
     carga, temp_obs, temp_prev, feriados,
     model_params = default_model_params_ego("M"),
-    test_config = default_test_config_ego()
+    test_config = default_test_config_ego("cv")
 ) {
-    NA
+
+    test_config  <- merge_lists(test_config,  default_test_config_ego("cv"))
+
+    model_params <- merge_lists(model_params, default_model_params_ego("M"))
+    model_params <- match_fun_args(model_params, build_regs_quant_singleshot)
+
+    data <- do.call(build_cache_dataset_ego,
+        list(carga, temp_obs, temp_prev, feriados, model_params[[1]]))
+
+    # se model_params$trend == TRUE, tirar tendencia e reservar modelo
+    # padronizar e reservar referencia da padronizacao
+    # treinamento segundo configuracao de test_config
+    # retornar objeto completo (modelo, reg_build_fun, trend, scales)
+
 }
 
 # AUXILIARES ---------------------------------------------------------------------------------------
