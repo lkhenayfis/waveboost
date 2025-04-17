@@ -1,6 +1,8 @@
 
 sample2 <- function(x, size) if (length(x) == 1) return(x) else sample(x, size)
 
+# UTILS DE UPSAMPLING ------------------------------------------------------------------------------
+
 #' Upsample De Dados
 #' 
 #' Rebaixa um dado \code{x} para resolucao \code{times} vezes menor
@@ -124,4 +126,143 @@ upsample_linear <- function(x, times, expand_right, ...) {
     }
 
     return(inner)
+}
+
+# UTILS PARA BUILD DE REGRESSORES ------------------------------------------------------------------
+
+#' Gera Slices De Dado Observado
+#' 
+#' Auxiliar para gerar e transformar slices de uma variavel observada
+
+build_lagged_slices <- function(dt, value_col, max_lag,
+    start_time = "07:30:00", time_col = "datahora",
+    transform = function(x) dwt(x, value_col, filter = "haar")) {
+
+    start <- get_start(start_time, head(dt[[time_col]], 48))
+    slice <- slice(dt, value_col, time_col, L = seq(-max_lag + 1, 0),
+        start = start, step = 48)
+    slice <- transform(slice)
+
+    return(slice)
+}
+
+#' Repete Um Slice Para Dia Seguinte
+#' 
+#' Replica um slice 48 vezes, modificando seu indice a cada vez para uma semihora do dia seguinte
+
+replicate_slice_day_ahead <- function(slice) {
+    hours <- generate_hours()
+    slice <- force_slice_hour(slice, "00:00:00")
+    slice <- lapply(hours, function(hour) {
+        slice_i <- offset_slice_time(slice, "1 day")
+        slice_i <- force_slice_hour(slice_i, hour)
+        slice_i
+    })
+    slice <- Reduce(c, slice)
+
+    return(slice)
+}
+
+#' Gera Vetor De Horas String A Cada Meia Hora
+
+generate_hours <- function() {
+    hours <- outer(c("00", "30"), formatC(seq(0, 23), flag = "0", width = 2), function(a, b) {
+        paste0(b, ":", a, ":00")
+    })
+    c(hours)
+}
+
+#' Deslocamento De Indice De Slice
+#' 
+#' Desloca o indice de um slice de montante igual a \code{offset}
+#' 
+#' @param slice slice cujo indice sera deslocado
+#' @param offset numero ou string (ex: "1 day", "3 weeks", etc.) indicando o offset
+
+offset_slice_time <- function(slice, offset) {
+    index <- attr(slice, "index")
+    new_index <- lapply(index, function(i) seq(i, length.out = 2, by = offset))
+    new_index <- sapply(new_index, tail, 1)
+    new_index <- as.POSIXct(new_index, tz = attr(index[1], "tzone"))
+
+    attr(slice, "index") <- new_index
+    return(slice)
+}
+
+#' Forca Indice De Slice Para Hora Especifica
+#' 
+#' Forca o horario de todos os indices num slice para \code{target_hour}, mantendo datas
+
+force_slice_hour <- function(slice, target_hour) {
+    index <- attr(slice, "index")
+    target_hour_num <- hora_str2num(target_hour)
+    hours <- nhour(index)
+    offset <- target_hour_num - hours
+    new_index <- index + (offset * 3600)
+
+    attr(slice, "index") <- new_index
+    return(slice)
+}
+
+#' Subset Em Janela Rolante De Slices
+#' 
+#' Gera slice ampliado a partir de \code{x} por subsets de largura \code{window} em seus elementos
+
+rolling_subset <- function(x, window) {
+    indexes <- attr(x, "index")
+    out <- lapply(indexes, function(i) {
+        x_i <- x[, i]
+        single_index_subset(x_i, window)
+    })
+    out <- Reduce(c, out)
+    return(out)
+}
+
+#' Subset Rolante Em Unico Elemento Em Slice
+#' 
+#' Auxiliar interna para \code{rolling_subset}
+
+single_index_subset <- function(x, window) {
+    out <- rollapply(x$temp_obs_c_temp_prev[[1]], window, function(v) v)
+    out <- lapply(seq_len(nrow(out)), function(i) out[i, ])
+    out <- list(out)
+    names(out) <- names(x)
+
+    # corrige indice para a hora alvo, isto e, final daquele subset
+    index <- attr(x, "index") + seq(0, 47) * (30 * 60) + (24 * 60 * 60)
+
+    out <- shapeshiftr:::new_slice_artifact(out, index, NA)
+    return(out)
+}
+
+#' Separa Uma Janela De Temperatura
+#' 
+#' Separa tamanho de janela \code{L} em máximo lag observado e máximo lead previsto
+
+split_l_temp <- function(hora_execucao, L, roll) {
+    hora_num <- hora_str2num(hora_execucao)
+
+    max_lead_prev <- (47.5 - hora_num) * 2
+    min_lead_prev <- (24 - hora_num) * 2
+    max_lag_obs   <- L - ifelse(roll, min_lead_prev, max_lead_prev)
+
+    split_l <- c(max_lag_obs, max_lead_prev)
+    return(split_l)
+}
+
+#' Converte Hora String Em Numero
+
+hora_str2num <- function(str) {
+    str <- as.numeric(strsplit(str, ":")[[1]])
+    str[2] <- str[2] / 60
+    num <- str[1] + str[2]
+    return(num)
+}
+
+#' Identifica Primeira Linha De \code{dt} Com Hora \code{hora}
+
+get_start <- function(hora, vec) {
+    horas <- format(vec, "%H:%M:%S")
+    start <- grep(hora, horas)
+    return(start)
 }
