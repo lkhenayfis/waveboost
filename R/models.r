@@ -56,14 +56,39 @@ match_fun_args <- function(list, fun) {
 #' Auxiliar Para Construcao De Parametros
 #' 
 #' Helper para definicao de templates de parametros para modelo EGO
+#' 
+#' O unico argumento desta funcao, `modo`, permite gerar listas de parametros templatizadas
+#' mais facilmente. Cada valor de modo corresponde a seguinte configuracao de tamanhos de encoding
+#' 
+#' * S: 32 valores de carga e 64 de temperatura
+#' * M: padrao, 64 valores de carga e 128 de temperatura
+#' * L: 64 valores de carga, 64 valores de mmgd e 128 de temperatura
+#' * XL: 64 valores de carga, 64 valores de mmgd, 64 valores de heatindex e 128 de temperatura
+#' 
+#' Em todos os casos a lista retornada contera os defaults
+#' 
+#' * `trend = TRUE`
+#' * `hora_inicio = "07:30:00"`
+#' * `roll = TRUE`
+#'
+#' @param modo um de `c("M", "S", "L", "XL")` indicando o tamanho do modelo. Veja Detalhes
 
-default_params_ego <- function(modo = c("M", "S", "L", "XL")) {
+default_model_params_ego <- function(modo = c("M", "S", "L", "XL")) {
     modo    <- match.arg(modo)
     L_carga <- switch(modo, "S" = 32, "M" = 64, "L" = 64, "XL" = 64)
     L_mmgd  <- switch(modo, "S" =  0, "M" =  0, "L" = 64, "XL" = 64)
     L_heatindex   <- switch(modo, "S" =  0, "M" =   0, "L" =   0, "XL" = 64)
     L_temperatura <- switch(modo, "S" = 64, "M" = 128, "L" = 128, "XL" = 128)
 
-    params <- list(L_carga, L_mmgd, L_heatindex, L_temperatura)
+    params <- list(
+        L_carga = L_carga,
+        L_mmgd = L_mmgd,
+        L_heatindex = L_heatindex,
+        L_temperatura = L_temperatura,
+        trend = TRUE,
+        hora_inicio = "07:30:00",
+        roll = TRUE
+    )
+
     return(params)
 }
