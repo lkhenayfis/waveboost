@@ -7,7 +7,7 @@
 #' 
 #' ## `model_params`
 #' 
-#' O argumento `params` pode ser uma lista contendo os seguintes elementos, divididos em
+#' O argumento `model_params` pode ser uma lista contendo os seguintes elementos, divididos em
 #' dois grupos. O primeiro grupo diz respeito a arquitetura do modelo, comecando com os tamanhos de
 #' sequencias para encoding
 #' 
@@ -25,22 +25,35 @@
 #' * `roll_temp`: booleano, se temperatura deve ser uma sequencia caminhando no tempo ou sempre a 
 #'     mesma contemplando todo o trajeto ate o final do dia seguinte
 #' 
-#' Os demais elementos de `params` podem corresponder a qualquer um dos argumentos passados no
-#' argumento `params` de [lightgbm::lgb.train()] ou [lightgbm::lgb.Dataset()]
+#' Os demais elementos de `model_params` podem corresponder a qualquer um dos argumentos passados no
+#' argumento `model_params` de [lightgbm::lgb.train()] ou [lightgbm::lgb.Dataset()]
 #' 
 #' Para facilitacao de testes mais padronizados, existe uma funcao [default_model_params_ego()] que
 #' retorna uma lista completa de parametros.
 #' 
-#' ## `test_params`
+#' ## `test_config`
+#' 
+#' Similar a `model_params`, `test_config` controla o tipo de teste que sera feito. Este argumento
+#' deve ser uma lista contendo sempre o elemento `modo`, que pode ser um de `c("cv", "split")`.
+#' 
+#' Se `modo = "cv"`, configura-se validacao cruzada. Neste caso a lista deve conter mais um
+#' argumento `nfolds`, indicando o numero de folds a ser utilizado. Cada fold e gerado
+#' automaticamente de forma estratificada.
+#' 
+#' Se `modo = "split"`, outros dois argumentos necessarios devem existir:
+#' 
+#' * `size` ou `frac`: se `size`, numero de amostras; se `frac` numero entre 0 e 1 indicando a
+#'     fracao do dado que deve ser retirada para teste
+#' * `where`: um de `c("head", "tail")` indicando de qual ponta estes dados serao retirados
 #' 
 #' @param carga,temp_obs,temp_prev,feriados data.tables de dados para geracao dos regressores
 #' @param model_params lista de parametros do modelo. Veja Detalhes
-#' @param test_params lista configurando o tipo e parametros de teste do modelo. Veja Detalhes
+#' @param test_config lista configurando o tipo e parametros de teste do modelo. Veja Detalhes
 
 EGO <- function(
     carga, temp_obs, temp_prev, feriados,
     model_params = default_model_params_ego("M"),
-    test_params = default_test_params_ego()
+    test_config = default_test_config_ego()
 ) {
     NA
 }
@@ -93,4 +106,30 @@ default_model_params_ego <- function(modo = c("M", "S", "L", "XL")) {
     )
 
     return(params)
+}
+
+#' Auxiliar Para Configuracao De Teste
+#' 
+#' Helper para definicao de templates de parametros para teste de modelo EGO
+#' 
+#' O unico argumento desta funcao, `modo`, permite gerar listas de parametros templatizadas
+#' mais facilmente. Existem duas opcoes
+#' 
+#' * `"cv"`: corresponde a validacao cruzada com 5 folds
+#' * `"split"`: separacao do dado em treino/teste tradicional com treino nos 30% finais do dado
+#'
+#' @param modo um de `c("cv", "split")`. Veja Detalhes
+
+default_test_config_ego <- function(modo = c("cv", "split")) {
+    modo <- match.arg(modo)
+
+    if (modo == "cv") {
+        params <- list(nfolds = 5)
+    } else {
+        params <- list(frac = .3, where = "tail")
+    }
+
+    config <- c(list(modo = modo), params)
+
+    return(config)
 }
