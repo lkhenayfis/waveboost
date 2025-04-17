@@ -81,6 +81,8 @@ build_temp <- function(dt_obs, dt_prev, hora_execucao, L, roll) {
     return(temp)
 }
 
+# REGRESSORES CATEGORICOS --------------------------------------------------------------------------
+
 #' Adiciona Regressores Qualitativos
 #' 
 #' Compoe adiciona informacao de feriados e timefeatures relevantes a regressores quantitativos
