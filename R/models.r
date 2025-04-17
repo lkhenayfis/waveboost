@@ -60,6 +60,30 @@ EGO <- function(
 
 # AUXILIARES ---------------------------------------------------------------------------------------
 
+#' Wrapper Para Leitura/Montagem De Dataset Para EGO
+#' 
+#' Busca versao cached de dado previamente montado e le, caso exista, ou monta e salva do contrario
+
+build_cache_dataset_ego <- function(carga, temp_obs, temp_prev, feriados, model_params,
+    cache_dir = Sys.getenv("CACHE_DIR", "./data/cache")) {
+
+    range_datas <- range(carga$datahora)
+    hash <- c(as.list(range_datas), model_params)
+    hash <- rlang::hash(hash)
+
+    file <- file.path(cache_dir, paste0(hash, ".parquet.gzip"))
+    if (file.exists(file)) {
+        data <- arrow::read_parquet(file)
+    } else {
+        data <- do.call(build_regs_quant_singleshot,
+            c(list(carga, temp_obs, temp_prev, feriados), model_params[[1]]))
+        arrow::write_parquet(data, file)
+    }
+
+    gc()
+    return(data)
+}
+
 #' Separa Lista Baseado Em Argumentos De Funcao
 #' 
 #' Retorna duas listas separando `list` entre argumentos de `fun` e demais elementos originais
