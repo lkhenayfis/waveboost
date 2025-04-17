@@ -60,12 +60,28 @@ EGO <- function(
 
 # AUXILIARES ---------------------------------------------------------------------------------------
 
-#' Reduz Lista Para Argumentos De Funcao
+#' Separa Lista Baseado Em Argumentos De Funcao
 #' 
-#' Retorna \code{list} apenas nas posicoes correspondentes aos argumentos de \code{fun}
+#' Retorna duas listas separando `list` entre argumentos de `fun` e demais elementos originais
 
 match_fun_args <- function(list, fun) {
+    fun_args <- formalArgs(fun)
+    paired <- list[names(list) %in% fun_args]
+    remain <- list[!(names(list) %in% fun_args)]
 
+    return(list(paired, remain))
+}
+
+#' Merge Duas Listas
+#' 
+#' Combina duas listas de elementos nomeados, privilegiando `list1` no caso de repeticoes
+
+merge_lists <- function(list1, list2) {
+    merged <- c(list1, list2)
+    dups <- duplicated(names(merged))
+    merged <- merged[!dups]
+
+    return(merged)
 }
 
 #' Auxiliar Para Construcao De Parametros
