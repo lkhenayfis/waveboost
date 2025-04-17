@@ -1,3 +1,5 @@
+library(data.table)
+library(zoo)
 
 sample2 <- function(x, size) if (length(x) == 1) return(x) else sample(x, size)
 
@@ -134,7 +136,7 @@ upsample_linear <- function(x, times, expand_right, ...) {
 #' 
 #' Auxiliar para gerar e transformar slices de uma variavel observada
 
-build_lagged_slices <- function(dt, value_col, max_lag,
+build_lagged_slice <- function(dt, value_col, max_lag,
     start_time = "07:30:00", time_col = "datahora",
     transform = function(x) dwt(x, value_col, filter = "haar")) {
 

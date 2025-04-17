@@ -1,6 +1,7 @@
 library(shapeshiftr)
 library(data.table)
-library(zoo)
+
+source("R/utils.r")
 
 # SINGLE SHOT --------------------------------------------------------------------------------------
 
@@ -34,14 +35,10 @@ build_regs_quant_singleshot <- function(
     temp_obs  <- upsample_temperatura(temp_obs, "obs")
     temp_prev <- upsample_temperatura(temp_prev, "prev")
 
-    reg_carga <- build_lagged_reg(carga_obs, "cargaglobalcons", L_carga, hora_execucao)
-    reg_carga <- replicate_slice_day_ahead(reg_carga)
+    carga <- build_carga(carga_obs, hora_execucao, L_carga)
+    temperatura <- build_temp(temp_obs, temp_prev, hora_execucao, L_temperatura, rolling)
 
-    reg_temp  <- build_temp(temp_obs, temp_prev, hora_execucao, L_temperatura, rolling)
-
-    reg_carga <- as.data.table(reg_carga)
-    reg_temp  <- as.data.table(reg_temp)
-    reg <- merge(reg_carga, reg_temp)
+    reg <- merge(carga, temperatura)
 
     return(reg)
 }
@@ -54,26 +51,36 @@ upsample_temperatura <- function(dt, tipo = c("obs", "prev")) {
     upsample(dt, 2, time_col = time_col, value_col = "temperatura", by = by, expand_right = TRUE)
 }
 
+build_carga <- function(dt, hora_execucao, L) {
+    carga <- build_lagged_slice(dt, "cargaglobalcons", L, hora_execucao)
+    carga <- replicate_slice_day_ahead(carga)
+    carga <- as.data.table(carga)
+    return(carga)
+}
+
 build_temp <- function(dt_obs, dt_prev, hora_execucao, L, roll) {
 
     split_L <- split_l_temp(hora_execucao, L, roll)
     start   <- get_start(hora_execucao, head(dt_obs$datahora, 48))
 
-    obs <- slice(dt_obs, "temperatura", "datahora", L = seq(-split_L[1] + 1, 0),
-        start = start, step = 48, names = "temp_obs")
-    # rebaixa o indice para 00:00 do dia
-    attr(obs, "index") <- attr(obs, "index") - (start - 1) * 30 * 60
-
-    prev <- slice(dt_prev, "temperatura", "datahora_execucao", "datahora_previsao",
+    temp <- slice(dt_prev, "temperatura", "datahora_execucao", "datahora_previsao",
         seq(start, by = 1, length.out = split_L[2]), start = 1, names = "temp_prev")
 
-    out <- merge(obs, prev)
-    out <- combine_features(out, "temp_obs", "temp_prev")
+    if (split_L[1] >= 0) {
+        obs <- slice(dt_obs, "temperatura", "datahora", L = seq(-split_L[1] + 1, 0),
+            start = start, step = 48, names = "temp_obs")
+        obs <- force_slice_hour(obs, "00:00:00")
 
-    out <- rolling_subset(out, L)
-    out <- dwt(out, "temp_obs_c_temp_prev", filter = "haar")
+        temp <- merge(obs, temp)
+        temp <- combine_features(temp, "temp_obs", "temp_prev")
+    }
 
-    return(out)
+    temp <- rolling_subset(temp, L)
+    temp <- dwt(temp, names(temp)[1], filter = "haar")
+
+    temp <- as.data.table(temp)
+
+    return(temp)
 }
 
 #' Adiciona Regressores Qualitativos
