@@ -1,9 +1,11 @@
 library(data.table)
 library(zoo)
 
+# STRAT CV -----------------------------------------------------------------------------------------
+
 sample2 <- function(x, size) if (length(x) == 1) return(x) else sample(x, size)
 
-# UTILS DE UPSAMPLING ------------------------------------------------------------------------------
+# UPSAMPLING ---------------------------------------------------------------------------------------
 
 #' Upsample De Dados
 #' 
@@ -130,7 +132,7 @@ upsample_linear <- function(x, times, expand_right, ...) {
     return(inner)
 }
 
-# UTILS PARA BUILD DE REGRESSORES ------------------------------------------------------------------
+# BUILD DE REGRESSORES -----------------------------------------------------------------------------
 
 #' Gera Slices De Dado Observado
 #' 
@@ -268,3 +270,94 @@ get_start <- function(hora, vec) {
     start <- grep(hora, horas)
     return(start)
 }
+
+# ESCALONAMENTO ------------------------------------------------------------------------------------
+
+#' Wrappers De \code{scale} Melhorados
+#' 
+#' Facilitadores para padronizar e reescalar dado de maneira mais automatica
+#' 
+#' @param dt data.table para padronizar ou reescalar
+#' @param ignore_classes classes de colunas que serao ignoradas na padronizacao
+#' @param reference_dt data.table previamente padronizado por esta funcao para usar de referencia na
+#'     padronizacao/reescalonamento de \code{dt}
+
+scale2 <- function(dt, reference_dt = NULL, ...) UseMethod("scale2", reference_dt)
+
+scale2.NULL <- function(dt, reference_dt,
+    ignore_classes = c("character", "integer", "POSIXt", "Date")) {
+
+    ignore_cols <- lapply(dt, inherits, what = ignore_classes)
+    means <- mapply(dt, ignore_cols, FUN = function(x, b) ifelse(b, 0, mean(x)))
+    sds   <- mapply(dt, ignore_cols, FUN = function(x, b) ifelse(b, 1, sd(x)))
+    scales <- mapply(means, sds, FUN = c, SIMPLIFY = FALSE)
+
+    new_scaled_dt(dt, scales, ignore_cols)
+}
+
+scale2.scaled_dt <- function(dt, reference_dt) {
+
+    recover <- recover_scale_ignored(dt, reference_dt)
+    scales  <- recover[[1]]
+    ignored <- recover[[2]]
+
+    new_scaled_dt(dt, scales, ignored)
+}
+
+new_scaled_dt <- function(dt, scales, ignored) {
+    scaled <- mapply(dt, scales, ignored,
+        FUN = function(x, s, i) if (i) x else (x - s[1]) / s[2],
+        SIMPLIFY = FALSE)
+
+    scaled <- as.data.table(scaled)
+    class(scaled) <- c("scaled_dt", class(dt))
+    attr(scaled, "scales") <- scales
+    attr(scaled, "ignored") <- ignored
+
+    return(scaled)
+}
+
+#' @rdname scale2
+
+rescale2 <- function(dt, reference_dt = NULL) {
+
+    recover <- recover_scale_ignored(dt, reference_dt)
+    scales  <- recover[[1]]
+    ignored <- recover[[2]]
+
+    rescaled <- mapply(dt, scales, ignored,
+        FUN = function(x, s, i) if (i) x else x * s[2] + s[1],
+        SIMPLIFY = FALSE)
+    rescaled <- as.data.table(rescaled)
+
+    return(rescaled)
+}
+
+recover_scale_ignored <- function(dt, reference_dt) {
+    dt_is_scaled <- inherits(dt, "scaled_dt")
+    has_ref_dt   <- !is.null(reference_dt)
+    ref_dt_is_scaled  <- has_ref_dt && inherits(reference_dt, "scaled_dt")
+    ref_has_all_names <- has_ref_dt && all(names(dt) %in% names(reference_dt))
+
+    if (!dt_is_scaled) {
+        if (!has_ref_dt) stop("'dt' nao foi padronizado por 'scale2' e nao ha 'reference_dt'")
+        if (!ref_dt_is_scaled) stop("'reference_dt' nao foi escalonado por 'scale2'")
+        if (!ref_has_all_names) stop("'reference_dt' nao possui todas as colunas de 'dt'")
+
+        scales <- attr(reference_dt, "scales")
+        scales <- lapply(names(dt), function(name) scales[[name]])
+        names(scales) <- names(dt)
+        ignored <- attr(reference_dt, "ignored")
+    } else {
+        scales <- attr(dt, "scales")
+        ignored <- attr(dt, "ignored")
+    }
+
+    return(list(scales, ignored))
+}
+
+#' Simplifica Referencia Para Reescalonamento
+#' 
+#' Retorna \code{reference_dt} porem sem dados, servindo apenas para uso como referencia posterior
+
+hollow_reference <- function(reference_dt) reference_dt[0L]
