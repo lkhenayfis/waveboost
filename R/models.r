@@ -1,3 +1,4 @@
+library(jsonlite)
 
 #' Modelo Singleshot
 #' 
@@ -80,17 +81,19 @@ EGO <- function(
 build_cache_data_quant_ego <- function(carga, temp_obs, temp_prev, model_params,
     cache_dir = Sys.getenv("CACHE_DIR", "./data/cache")) {
 
-    range_datas <- range(carga$datahora)
-    hash <- c(as.list(range_datas), model_params)
-    hash <- rlang::hash(hash)
+    hash <- generate_hash(carga, model_params)
+    registry  <- check_data_registry(cache_dir)
+    hash_read <- search_data_registry(hash, registry)
 
-    file <- file.path(cache_dir, paste0(hash, ".parquet.gzip"))
-    if (file.exists(file)) {
+    if (length(hash_read) > 0) {
+        file <- file.path(cache_dir, paste0(hash_read, ".parquet.gzip"))
         data <- arrow::read_parquet(file)
     } else {
+        file <- file.path(cache_dir, paste0(hash, ".parquet.gzip"))
         data <- do.call(build_regs_quant_singleshot,
             c(list(carga, temp_obs, temp_prev), model_params))
         arrow::write_parquet(data, file)
+        update_data_registry(hash, cache_dir)
     }
 
     gc()
