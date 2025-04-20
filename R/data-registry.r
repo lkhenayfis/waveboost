@@ -1,4 +1,8 @@
 
+#' Geracao De Hashes Para Dataset
+#' 
+#' Compoe uma hash baseado em parametros e datas utilizadas para compor um dataset EGO
+
 generate_hash <- function(carga, model_params) {
     hash_elems <- c(
         codigo_area = list(carga$codigo_area[1]),
@@ -9,7 +13,15 @@ generate_hash <- function(carga, model_params) {
     return(hash)
 }
 
+#' Formatacao De Hash Para Registro
+#' 
+#' Formata `hash` e seus parametros de geracao como lista para escrita no registro
+
 format_hash_for_registry <- function(hash) c(list(hash = as.character(hash)), attr(hash, "keys"))
+
+#' Escreve Registro
+#' 
+#' Wrapper para padronizacao das interacoes de escrita do registro de dados
 
 write_data_registry <- function(registry = list(), cache_dir) {
     registry <- lapply(registry, function(r) {
@@ -18,6 +30,10 @@ write_data_registry <- function(registry = list(), cache_dir) {
     })
     write_json(registry, file.path(cache_dir, "registry.json"), pretty = TRUE, auto_unbox = TRUE)
 }
+
+#' Le Registro
+#' 
+#' Wrapper para padronizacao das interacoes de leitura do registro de dados
 
 read_data_registry <- function(cache_dir) {
     registry <- read_json(file.path(cache_dir, "registry.json"))
@@ -28,17 +44,29 @@ read_data_registry <- function(cache_dir) {
     return(registry)
 }
 
+#' Controle Para Novos Clones
+#' 
+#' Checa se existe um registro em `cache_dir` e, caso negativo, o cria
+
 check_data_registry <- function(cache_dir) {
     file <- file.path(cache_dir, "registry.json")
     if (!file.exists(file)) write_data_registry(cache_dir = cache_dir)
     read_data_registry(cache_dir)
 }
 
+#' Atualizacao De Registro
+#' 
+#' Adiciona conteudos de `new`, uma hash criada por `generate_hash`, ao registro em `cache_dir`
+
 update_data_registry <- function(new, cache_dir) {
     registry <- read_data_registry(cache_dir)
     registry <- c(registry, list(format_hash_for_registry(new)))
     write_data_registry(registry, cache_dir)
 }
+
+#' Busca De Elemento Compativel
+#' 
+#' Procura em `registry` o elemento coerente com `hash`; caso nao haja, retorna string vazia
 
 search_data_registry <- function(hash, registry) {
     keys <- attr(hash, "keys")
