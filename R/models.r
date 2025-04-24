@@ -84,6 +84,17 @@ new_EGO <- function(model, model_params, trend, scales) {
     return(new)
 }
 
+# TREINAMENTO DE MODELO ----------------------------------------------------------------------------
+
+#' Entrypoint Generico Para Treino
+#' 
+#' Despacha o treino dependendo do tipo de teste configurado em `test_config`
+#' 
+#' @param data dados preparados durante execucao de `EGO`
+#' @param model_params lista de parametros para serem utilizados no argumento `params` de 
+#'     [lightgbm::lgb.train()] ou [lightgbm::lgb.Dataset()]
+#' @param test_config lista definindo tipo e parametrizacao de teste do modelo. Veja [EGO()]
+
 train_EGO <- function(data, model_params, test_config) {
     call <- list(str2lang(paste0("train_EGO", toupper(call$modo))))
     call <- c(call, test_config[!grepl("modo", names(test_config))])
@@ -92,7 +103,11 @@ train_EGO <- function(data, model_params, test_config) {
     eval(as.call(call), parent.frame(), parent.frame())
 }
 
-train_EGO_CV <- function(data, model_params, nfolds, ...) {
+#' Treinamento Testando Por Cross Validation
+#' 
+#' Variante de treino testando o modelo em `nfolds` conjuntos estratificados de validacao
+
+train_EGO_CV <- function(data, model_params, nfolds) {
     folds <- rep(rep(seq_len(nfolds), each = 7 * 48), length.out = nrow(data))
     folds <- split(seq_len(nrow(data)), folds)
 
@@ -102,7 +117,7 @@ train_EGO_CV <- function(data, model_params, nfolds, ...) {
         params = model_params
     )
 
-    model <- lgb.cv(
+    CV <- lgb.cv(
         data = dataset,
         nrounds = 5000L,
         folds = folds,
@@ -110,8 +125,19 @@ train_EGO_CV <- function(data, model_params, nfolds, ...) {
         early_stopping_rounds = 50L
     )
 
+    model <- lgb.train(
+        data = dataset,
+        nrounds = CV$best_iter,
+        params = model_params
+    )
+
+    rm("CV")
+    gc()
+
     return(model)
 }
+
+# PREVISAO -----------------------------------------------------------------------------------------
 
 predict.EGO <- function(object, carga, temp_obs, temp_prev, feriados, ...) {
     # montar regressores exatamente como no fit
