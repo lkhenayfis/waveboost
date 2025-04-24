@@ -54,22 +54,69 @@ library(jsonlite)
 EGO <- function(
     carga, temp_obs, temp_prev, feriados,
     model_params = default_model_params_ego("M"),
-    test_config = default_test_config_ego("cv")
-) {
+    test_config = default_test_config_ego("cv")) {
 
     test_config  <- merge_lists(test_config,  default_test_config_ego("cv"))
-
     model_params <- merge_lists(model_params, default_model_params_ego("M"))
-    model_params <- match_fun_args(model_params, build_regs_quant_singleshot)
 
-    data_quant <- do.call(build_cache_data_quant_ego,
-        list(carga, temp_obs, temp_prev, model_params[[1]]))
+    split <- match_fun_args(model_params, build_regs_quant_singleshot)
+    data <- do.call(build_cache_data_quant_ego, list(carga, temp_obs, temp_prev, split[[1]]))
 
-    # se model_params$trend == TRUE, tirar tendencia e reservar modelo
-    # padronizar e reservar referencia da padronizacao
-    # treinamento segundo configuracao de test_config
-    # retornar objeto completo (modelo, reg_build_fun, trend, scales)
+    split <- match_fun_args(split[[2]], add_regs_quali)
+    data  <- do.call(add_regs_quali, list(data, feriados, split[[1]]))
 
+    data <- scale2(data)
+    ref  <- hollow_reference(data)
+
+    form  <- if (model_params$trend) cargaglobalcons ~ datahora else cargaglobalcons ~ 1
+    trend <- lm(form, carga)
+    data[, cargaglobalcons := residuals(trend)]
+
+    model <- train_EGO(data, split[[2]], test_config)
+
+    new_EGO(model, split[[2]], trend, ref)
+}
+
+new_EGO <- function(model, model_params, trend, scales) {
+    new <- list(model = model, trend = trend, scales = scales, params = model_params)
+    class(new) <- "EGO"
+
+    return(new)
+}
+
+train_EGO <- function(data, model_params, test_config) {
+    call <- list(str2lang(paste0("train_EGO", toupper(call$modo))))
+    call <- c(call, test_config[!grepl("modo", names(test_config))])
+    call$data <- quote(data)
+    call$model_params <- quote(model_params)
+    eval(as.call(call), parent.frame(), parent.frame())
+}
+
+train_EGO_CV <- function(data, model_params, nfolds, ...) {
+    folds <- rep(rep(seq_len(nfolds), each = 7 * 48), length.out = nrow(data))
+    folds <- split(seq_len(nrow(data)), folds)
+
+    dataset <- lgb.Dataset(
+        data.matrix(data[, -(1:2)]),
+        label = data$cargaglobalcons,
+        params = model_params
+    )
+
+    model <- lgb.cv(
+        data = dataset,
+        nrounds = 5000L,
+        folds = folds,
+        params = model_params,
+        early_stopping_rounds = 50L
+    )
+
+    return(model)
+}
+
+predict.EGO <- function(object, carga, temp_obs, temp_prev, feriados, ...) {
+    # montar regressores exatamente como no fit
+    # previsao
+    # reescalornar e retornar tendencia
 }
 
 # AUXILIARES ---------------------------------------------------------------------------------------
@@ -88,6 +135,7 @@ build_cache_data_quant_ego <- function(carga, temp_obs, temp_prev, model_params,
     if (length(hash_read) > 0) {
         file <- file.path(cache_dir, paste0(hash_read, ".parquet.gzip"))
         data <- arrow::read_parquet(file)
+        data <- data[datahora %between% carga$datahora]
     } else {
         file <- file.path(cache_dir, paste0(hash, ".parquet.gzip"))
         data <- do.call(build_regs_quant_singleshot,
