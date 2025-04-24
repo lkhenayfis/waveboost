@@ -5,6 +5,32 @@ library(zoo)
 
 sample2 <- function(x, size) if (length(x) == 1) return(x) else sample(x, size)
 
+# MANEJO DE LISTAS ---------------------------------------------------------------------------------
+
+#' Separa Lista Baseado Em Argumentos De Funcao
+#' 
+#' Retorna duas listas separando `list` entre argumentos de `fun` e demais elementos originais
+
+match_fun_args <- function(list, fun) {
+    fun_args <- formalArgs(fun)
+    paired <- list[names(list) %in% fun_args]
+    remain <- list[!(names(list) %in% fun_args)]
+
+    return(list(paired, remain))
+}
+
+#' Merge Duas Listas
+#' 
+#' Combina duas listas de elementos nomeados, privilegiando `list1` no caso de repeticoes
+
+merge_lists <- function(list1, list2) {
+    merged <- c(list1, list2)
+    dups <- duplicated(names(merged))
+    merged <- merged[!dups]
+
+    return(merged)
+}
+
 # UPSAMPLING ---------------------------------------------------------------------------------------
 
 #' Upsample De Dados
