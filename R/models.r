@@ -77,7 +77,7 @@ EGO <- function(
 
     model <- train_EGO(data, split[[2]], test_config)
 
-    new_EGO(model, split[[2]], trend, ref)
+    new_EGO(model, model_params, trend, ref)
 }
 
 new_EGO <- function(model, model_params, trend, scales) {
@@ -136,10 +136,30 @@ train_EGO_CV <- function(data, model_params, nfolds, cv_results_only = FALSE, ..
 
 # PREVISAO -----------------------------------------------------------------------------------------
 
+#' Previsao De Modelos EGO
+#' 
+#' Wrapper de previsao para modelos estimados via [`EGO()`]
+
 predict.EGO <- function(object, carga, temp_obs, temp_prev, feriados, ...) {
-    # montar regressores exatamente como no fit
-    # previsao
-    # reescalornar e retornar tendencia
+
+    split <- match_fun_args(object$params, build_regs_quant_singleshot)
+    data <- do.call(build_cache_data_quant_ego, list(carga, temp_obs, temp_prev, split[[1]]))
+
+    split <- match_fun_args(split[[2]], add_regs_quali)
+    data  <- do.call(add_regs_quali, c(list(data, feriados), split[[1]]))
+
+    data <- scale2(data, object$scales)
+
+    pred <- predict(object$model, data.matrix(data[, .SD, .SDcols = -c("index")]))
+
+    pred <- data.table(
+        index = data$index,
+        cargaglobalcons = pred + predict(object$trend, data)
+    )
+    pred <- rescale2(pred, object$scales)
+    colnames(pred)[1] <- "datahora"
+
+    return(pred)
 }
 
 # AUXILIARES ---------------------------------------------------------------------------------------
