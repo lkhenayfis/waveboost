@@ -143,11 +143,14 @@ predict.EGO <- function(object, carga, temp_obs, temp_prev, feriados, ...) {
 #' Wrapper Para Leitura/Montagem De Dataset Para EGO
 #' 
 #' Busca versao cached de dado previamente montado e le, caso exista, ou monta e salva do contrario
+#' 
+#' @param carga,temp_obs,temp_prev data.tables de dados para montagem dos regressores
+#' @param params lista nomeada de argumentos para chamada de [`build_regs_quant_singleshot()`]
 
-build_cache_data_quant_ego <- function(carga, temp_obs, temp_prev, model_params,
+build_cache_data_quant_ego <- function(carga, temp_obs, temp_prev, params,
     cache_dir = Sys.getenv("CACHE_DIR", "./data/cache")) {
 
-    hash <- generate_hash(carga, model_params)
+    hash <- generate_hash(carga, params)
     registry  <- check_data_registry(cache_dir)
     hash_read <- search_data_registry(hash, registry)
 
@@ -158,7 +161,7 @@ build_cache_data_quant_ego <- function(carga, temp_obs, temp_prev, model_params,
     } else {
         file <- file.path(cache_dir, paste0(hash, ".parquet.gzip"))
         data <- do.call(build_regs_quant_singleshot,
-            c(list(carga, temp_obs, temp_prev), model_params))
+            c(list(carga, temp_obs, temp_prev), params))
         arrow::write_parquet(data, file)
         update_data_registry(hash, cache_dir)
     }
