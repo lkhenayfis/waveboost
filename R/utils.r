@@ -374,6 +374,8 @@ recover_scale_ignored <- function(dt, reference_dt) {
         scales <- lapply(names(dt), function(name) scales[[name]])
         names(scales) <- names(dt)
         ignored <- attr(reference_dt, "ignored")
+        ignored <- lapply(names(dt), function(name) ignored[[name]])
+        names(ignored) <- names(dt)
     } else {
         scales <- attr(dt, "scales")
         ignored <- attr(dt, "ignored")
