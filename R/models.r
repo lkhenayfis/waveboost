@@ -107,7 +107,7 @@ train_EGO <- function(data, model_params, test_config) {
 #' 
 #' Variante de treino testando o modelo em `nfolds` conjuntos estratificados de validacao
 
-train_EGO_CV <- function(data, model_params, nfolds) {
+train_EGO_CV <- function(data, model_params, nfolds, cv_results_only = FALSE, ...) {
     folds <- rep(rep(seq_len(nfolds), each = 7 * 48), length.out = nrow(data))
     folds <- split(seq_len(nrow(data)), folds)
 
@@ -117,22 +117,15 @@ train_EGO_CV <- function(data, model_params, nfolds) {
         params = model_params
     )
 
-    CV <- lgb.cv(
-        data = dataset,
-        nrounds = 5000L,
-        folds = folds,
-        params = model_params,
-        early_stopping_rounds = 50L
-    )
+    CV <- lgb.cv(data = dataset, folds = folds, params = model_params, ...)
 
-    model <- lgb.train(
-        data = dataset,
-        nrounds = CV$best_iter,
-        params = model_params
-    )
+    if (cv_results_only) return(CV[c("best_score", "best_iter")])
 
+    best_iter  <- CV$best_iter
     rm("CV")
     gc()
+
+    model <- lgb.train(data = dataset, nrounds = best_iter, params = model_params)
 
     return(model)
 }
