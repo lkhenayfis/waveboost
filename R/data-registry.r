@@ -71,6 +71,8 @@ update_data_registry <- function(new, cache_dir) {
 search_data_registry <- function(hash, registry) {
     keys <- attr(hash, "keys")
 
+    if (length(registry) == 0) return(character(0))
+
     match_dates  <- sapply(registry, function(r) {
         all(as.numeric(keys$range_datas) %between% as.numeric(r$range_datas))
     })
@@ -85,7 +87,7 @@ search_data_registry <- function(hash, registry) {
     if (sum(matches) != 1) {
         out <- character(0)
     } else {
-        out <- registry[[matches]]$hash
+        out <- registry[[which(matches)]]$hash
     }
 
     return(out)
