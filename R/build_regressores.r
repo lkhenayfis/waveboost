@@ -28,7 +28,7 @@ build_regs_quant_singleshot <- function(
     carga_obs, temp_obs, temp_prev,
     hora_execucao = "07:30:00",
     L_carga = 64, L_temperatura = 128,
-    rolling = TRUE) {
+    rolling = TRUE, ...) {
 
     temp_obs  <- upsample_temperatura(temp_obs, "obs")
     temp_prev <- upsample_temperatura(temp_prev, "prev")
