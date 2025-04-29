@@ -1,4 +1,5 @@
 library(jsonlite)
+library(lightgbm)
 
 #' Modelo Singleshot
 #' 
@@ -63,13 +64,15 @@ EGO <- function(
     data <- do.call(build_cache_data_quant_ego, list(carga, temp_obs, temp_prev, split[[1]]))
 
     split <- match_fun_args(split[[2]], add_regs_quali)
-    data  <- do.call(add_regs_quali, list(data, feriados, split[[1]]))
+    data  <- do.call(add_regs_quali, c(list(data, feriados), split[[1]]))
+
+    data <- merge(data, carga[, .(datahora, cargaglobalcons)], by.x = "index", by.y = "datahora")
 
     data <- scale2(data)
     ref  <- hollow_reference(data)
 
-    form  <- if (model_params$trend) cargaglobalcons ~ datahora else cargaglobalcons ~ 1
-    trend <- lm(form, carga)
+    form  <- if (model_params$trend) cargaglobalcons ~ index else cargaglobalcons ~ 1
+    trend <- lm(form, data)
     data[, cargaglobalcons := residuals(trend)]
 
     model <- train_EGO(data, split[[2]], test_config)
@@ -96,10 +99,10 @@ new_EGO <- function(model, model_params, trend, scales) {
 #' @param test_config lista definindo tipo e parametrizacao de teste do modelo. Veja [EGO()]
 
 train_EGO <- function(data, model_params, test_config) {
-    call <- list(str2lang(paste0("train_EGO", toupper(call$modo))))
+    call <- list(str2lang(paste0("train_EGO_", toupper(test_config$modo))))
     call <- c(call, test_config[!grepl("modo", names(test_config))])
     call$data <- quote(data)
-    call$model_params <- quote(model_params)
+    call$model_params <- model_params
     eval(as.call(call), parent.frame(), parent.frame())
 }
 
@@ -112,12 +115,13 @@ train_EGO_CV <- function(data, model_params, nfolds, cv_results_only = FALSE, ..
     folds <- split(seq_len(nrow(data)), folds)
 
     dataset <- lgb.Dataset(
-        data.matrix(data[, -(1:2)]),
+        data.matrix(data[, .SD, .SDcols = -c("index", "cargaglobalcons")]),
         label = data$cargaglobalcons,
         params = model_params
     )
 
-    CV <- lgb.cv(data = dataset, folds = folds, params = model_params, ...)
+    CV <- lgb.cv(data = dataset, folds = folds, params = model_params,
+        nrounds = 5000L, early_stopping_rounds = 50L, eval_freq = 100L)
 
     if (cv_results_only) return(CV[c("best_score", "best_iter")])
 
@@ -157,7 +161,7 @@ build_cache_data_quant_ego <- function(carga, temp_obs, temp_prev, params,
     if (length(hash_read) > 0) {
         file <- file.path(cache_dir, paste0(hash_read, ".parquet.gzip"))
         data <- arrow::read_parquet(file)
-        data <- data[datahora %between% carga$datahora]
+        data <- data[index %between% range(carga$datahora)]
     } else {
         file <- file.path(cache_dir, paste0(hash, ".parquet.gzip"))
         data <- do.call(build_regs_quant_singleshot,
@@ -226,7 +230,7 @@ default_test_config_ego <- function(modo = c("cv", "split")) {
     modo <- match.arg(modo)
 
     if (modo == "cv") {
-        params <- list(nfolds = 5)
+        params <- list(nfolds = 4)
     } else {
         params <- list(frac = .3, where = "tail")
     }
