@@ -1,4 +1,3 @@
-library(dbrenovaveis)
 
 get_areas <- function(conn = .CONEXAO_BANCO) {
     getfromdb(conn, "areas")

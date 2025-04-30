@@ -1,5 +1,3 @@
-library(jsonlite)
-library(lightgbm)
 
 #' Modelo Singleshot
 #' 

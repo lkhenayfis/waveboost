@@ -1,0 +1,13 @@
+library(arrow)
+library(data.table)
+library(jsonlite)
+library(zoo)
+library(dbrenovaveis)
+library(shapeshiftr)
+library(lightgbm)
+
+source("R/utils.r")
+source("R/leitura.r")
+source("R/data-registry.r")
+source("R/build-regressores.r")
+source("R/models.r")
