@@ -49,11 +49,13 @@
 #' @param carga,temp_obs,temp_prev,feriados data.tables de dados para geracao dos regressores
 #' @param model_params lista de parametros do modelo. Veja Detalhes
 #' @param test_config lista configurando o tipo e parametros de teste do modelo. Veja Detalhes
+#' @param ... apenas para uso interno
 
 EGO <- function(
     carga, temp_obs, temp_prev, feriados,
     model_params = default_model_params_ego("M"),
-    test_config = default_test_config_ego("cv")) {
+    test_config = default_test_config_ego("cv"),
+    ...) {
 
     test_config  <- merge_lists(test_config,  default_test_config_ego("cv"))
     model_params <- merge_lists(model_params, default_model_params_ego("M"))
@@ -73,7 +75,7 @@ EGO <- function(
     trend <- lm(form, data)
     data[, cargaglobalcons := residuals(trend)]
 
-    model <- train_EGO(data, split[[2]], test_config)
+    model <- train_EGO(data, split[[2]], test_config, ...)
 
     new_EGO(model, model_params, trend, ref)
 }
@@ -96,7 +98,7 @@ new_EGO <- function(model, model_params, trend, scales) {
 #'     [lightgbm::lgb.train()] ou [lightgbm::lgb.Dataset()]
 #' @param test_config lista definindo tipo e parametrizacao de teste do modelo. Veja [EGO()]
 
-train_EGO <- function(data, model_params, test_config) {
+train_EGO <- function(data, model_params, test_config, ...) {
     call <- list(str2lang(paste0("train_EGO_", toupper(test_config$modo))))
     call <- c(call, test_config[!grepl("modo", names(test_config))])
     call$data <- quote(data)
