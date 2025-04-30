@@ -1,6 +1,10 @@
 
-get_areas <- function(conn = .CONEXAO_BANCO) {
-    getfromdb(conn, "areas")
+get_areas <- function(no_subsistemas = FALSE, conn = .CONEXAO_BANCO) {
+    d <- getfromdb(conn, "areas")
+    if (no_subsistemas) {
+        d <- d[!grepl("Subsistema", nome_area)]
+    }
+    d
 }
 
 get_feriados <- function(areas, conn = .CONEXAO_BANCO) {
