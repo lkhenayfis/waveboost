@@ -198,6 +198,17 @@
       ],
       "Hash": "491c34d3d9dd0d2fe13d9f278bb90795"
     },
+    "common": {
+      "Package": "common",
+      "Version": "1.1.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "utils"
+      ],
+      "Hash": "d599e49b752b790842070992fdd992c4"
+    },
     "cpp11": {
       "Package": "cpp11",
       "Version": "0.5.2",
@@ -403,6 +414,19 @@
         "utils"
       ],
       "Hash": "d8ea37a9e9e62673f9c26390747d294d"
+    },
+    "logr": {
+      "Package": "logr",
+      "Version": "1.3.9",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "common",
+        "utils",
+        "withr"
+      ],
+      "Hash": "57aee065443d66e53413b34e357e69a4"
     },
     "magrittr": {
       "Package": "magrittr",
