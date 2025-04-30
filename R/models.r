@@ -126,13 +126,15 @@ train_EGO_CV <- function(data, model_params, nfolds, cv_results_only = FALSE, ..
     CV <- lgb.cv(data = dataset, folds = folds, params = model_params,
         nrounds = 5000L, early_stopping_rounds = 50L, eval_freq = 100L)
 
-    if (cv_results_only) return(CV[c("best_score", "best_iter")])
+    if (cv_results_only) return(c(CV$best_score, CV$best_iter))
 
+    best_score <- CV$best_score
     best_iter  <- CV$best_iter
     rm("CV")
     gc()
 
     model <- lgb.train(data = dataset, nrounds = best_iter, params = model_params)
+    attr(model, "CV_score") <- best_score
 
     return(model)
 }
