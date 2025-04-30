@@ -99,10 +99,13 @@ new_EGO <- function(model, model_params, trend, scales) {
 #' @param test_config lista definindo tipo e parametrizacao de teste do modelo. Veja [EGO()]
 
 train_EGO <- function(data, model_params, test_config, ...) {
-    call <- list(str2lang(paste0("train_EGO_", toupper(test_config$modo))))
-    call <- c(call, test_config[!grepl("modo", names(test_config))])
-    call$data <- quote(data)
-    call$model_params <- model_params
+    call <- match.call()
+    call[[1]] <- str2lang(paste0("train_EGO_", toupper(test_config$modo)))
+    call$test_config <- NULL
+
+    test_args <- names(test_config)[!grepl("modo", names(test_config))]
+    for (arg in test_args) call[[arg]] <- test_config[[arg]]
+
     eval(as.call(call), parent.frame(), parent.frame())
 }
 
