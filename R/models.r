@@ -72,8 +72,8 @@ EGO <- function(
     ref  <- hollow_reference(data)
 
     form  <- if (model_params$trend) cargaglobalcons ~ index else cargaglobalcons ~ 1
-    trend <- lm(form, data)
-    data[, cargaglobalcons := residuals(trend)]
+    trend <- lm2(form, data)
+    data[, cargaglobalcons := cargaglobalcons - predict(trend, data)]
 
     model <- train_EGO(data, split[[2]], test_config, ...)
 

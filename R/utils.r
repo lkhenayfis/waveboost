@@ -1,3 +1,25 @@
+# DETREND ------------------------------------------------------------------------------------------
+
+#' Regressao Linear Compactada
+#' 
+#' Wrapper de regressao linear removendo tudo o que nao e estritamente necessario para previsao
+
+lm2 <- function(formula, data, subset, weights, na.action,
+    method = "qr", model = TRUE, x = FALSE, y = FALSE, qr = TRUE,
+    singular.ok = TRUE, contrasts = NULL, offset, ...) {
+
+    mod <- match.call()
+    mod[[1]] <- quote(lm)
+    mod <- eval(mod, parent.frame(), parent.frame())
+
+    mod$model <- NULL
+    mod$fitted.values <- NULL
+    mod$residuals <- NULL
+    mod$effects <- NULL
+    mod$qr$qr <- NULL
+
+    return(mod)
+}
 
 # STRAT CV -----------------------------------------------------------------------------------------
 
