@@ -63,7 +63,7 @@ for (i in seq_len(nrow(LOOP))) {
 
         if (attr(model$model, "CV_score") < best_score) {
             best_score <- attr(model$model, "CV_score")
-            saveRDS(model, arq)
+            save_model(model, arq)
         }
 
         rm(model)

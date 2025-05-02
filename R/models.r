@@ -87,6 +87,22 @@ new_EGO <- function(model, model_params, trend, scales) {
     return(new)
 }
 
+# SALVAMENTO ---------------------------------------------------------------------------------------
+
+#' Salva Modelos EGO
+#' 
+#' Wrapper para salvar modelos reduzindo seu tamanho
+#' 
+#' O componente `trend` de modelo guarda uma referencia ao ambiente de estimacao da regressao, onde
+#' estao todos os dados usados no fit do modelo. Isto ocasiona objetos extremamente pessados na
+#' serializacao para rds, tornando-se necessario limpar o dado primeiro
+
+save_model <- function(model, file) {
+    rm(list = ls(envir = attr(model$trend$terms, ".Environment")),
+        envir = attr(model$trend$terms, ".Environment"))
+    saveRDS(model, file)
+}
+
 # TREINAMENTO DE MODELO ----------------------------------------------------------------------------
 
 #' Entrypoint Generico Para Treino
