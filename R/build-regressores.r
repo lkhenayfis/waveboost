@@ -16,6 +16,7 @@
 #' @param carga_obs,temp_obs,temp_prev data.tables de dados observados e previstos
 #' @param hora_execucao ultima hora para qual ha dados observados disponiveis
 #' @param L_carga vetor de lags de carga a serem utilizados
+#' @param L_carga vetor de lags de mmgd a serem utilizados
 #' @param L_temperatura vetor de lags/leads de temperatura a serem utilizados. Veja Detalhes
 #'     transformados por wavelet
 #' @param rolling booleano indicando se a temperatura deve ser tratada em janela rolante ou fixa
@@ -25,13 +26,19 @@
 build_regs_quant_singleshot <- function(
     carga_obs, temp_obs, temp_prev,
     hora_execucao = "07:30:00",
-    L_carga = 64, L_temperatura = 128,
+    L_carga = 64, L_mmgd = 64, L_temperatura = 128,
     rolling = TRUE, ...) {
 
     temp_obs  <- upsample_temperatura(temp_obs, "obs")
     temp_prev <- upsample_temperatura(temp_prev, "prev")
 
     carga <- build_carga(carga_obs, hora_execucao, L_carga)
+
+    if (L_mmgd > 0) {
+        mmgd <- build_mmgd(carga_obs, hora_execucao, L_carga)
+        carga <- merge(carga, mmgd)
+    }
+
     temperatura <- build_temp(temp_obs, temp_prev, hora_execucao, L_temperatura, rolling)
 
     reg <- merge(carga, temperatura)
@@ -52,6 +59,13 @@ build_carga <- function(dt, hora_execucao, L) {
     carga <- replicate_slice_day_ahead(carga)
     carga <- as.data.table(carga)
     return(carga)
+}
+
+build_mmgd <- function(dt, hora_execucao, L) {
+    mmgd <- build_lagged_slice(dt, "cargammgd", L, hora_execucao)
+    mmgd <- replicate_slice_day_ahead(mmgd)
+    mmgd <- as.data.table(mmgd)
+    return(mmgd)
 }
 
 build_temp <- function(dt_obs, dt_prev, hora_execucao, L, roll) {
