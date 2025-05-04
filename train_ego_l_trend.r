@@ -27,6 +27,7 @@ generate_train_configs <- function(model_params, model_params_opt) {
 
 NOME_MODELO <- "WaveBoost_EGO_L_trend"
 MODEL_PARAMS <- list(
+    L_mmgd = 64,
     feature_pre_filter = FALSE,
     timefeatures = c("data.table::wday", "nhour")
 )
