@@ -9,11 +9,10 @@ log_open(paste0("train_EGO_L_trend_", timestamp))
 
 # --------------------------------------------------------------------------------------------------
 
-month2window <- function(mes) {
-    ano <- ifelse(mes == 1, 2023, 2024)
-    mes <- ifelse(mes == 1, 12, mes - 1)
-    mes <- formatC(mes, width = 2, flag = "0")
-    paste0("2020/", ano, "-", mes)
+parsedata <- function(data) {
+    data <- as.Date(paste0(data, "-01"))
+    data <- data - 1
+    format(data, format = "2020/%Y-%m")
 }
 
 generate_train_configs <- function(model_params, model_params_opt) {
@@ -32,8 +31,8 @@ MODEL_PARAMS <- list(
     timefeatures = c("data.table::wday", "nhour")
 )
 MODEL_PARAMS_OPT <- list(
-    min_data_in_leaf = c(25, 50, 100),
-    max_leaves = c(16, 32)
+    min_data_in_leaf = c(50, 100, 200),
+    max_leaves = c(8, 16, 32)
 )
 
 CONFIGS <- generate_train_configs(MODEL_PARAMS, MODEL_PARAMS_OPT)
@@ -41,21 +40,22 @@ CONFIGS <- generate_train_configs(MODEL_PARAMS, MODEL_PARAMS_OPT)
 # --------------------------------------------------------------------------------------------------
 
 areas <- get_areas(no_subsistema = TRUE)
-LOOP <- expand.grid(mes = seq(9, 10), stringsAsFactors = FALSE, area = areas$codigo_area)
+datas <- c("2024-10", "2024-11", "2024-12", "2025-01")
+LOOP <- expand.grid(data = datas, area = areas$codigo_area, stringsAsFactors = FALSE)
+
+log_print("Inicio do treinamento")
 
 for (i in seq_len(nrow(LOOP))) {
 
     area <- LOOP[i, "area"]
-    mes  <- LOOP[i, "mes"]
+    data <- LOOP[i, "data"]
 
-    log_print(paste(area, mes, sep = " -- "))
-
-    arq <- paste0(NOME_MODELO, "-area=", area, "-mes=", mes, ".rds")
+    arq <- paste0(NOME_MODELO, "-area=", area, "-mes=", sub("\\-", "", data), ".rds")
     arq <- file.path("out", "models", arq)
 
-    carga_obs <- get_carga_observada(area, month2window(mes))
-    temp_obs  <- get_temperatura_observada(area, month2window(mes))
-    temp_prev <- get_temperatura_prevista(area, month2window(mes))
+    carga_obs <- get_carga_observada(area, parsedata(data))
+    temp_obs  <- get_temperatura_observada(area, parsedata(data))
+    temp_prev <- get_temperatura_prevista(area, parsedata(data))
     feriados  <- get_feriados(area)
 
     best_score <- Inf
@@ -70,4 +70,8 @@ for (i in seq_len(nrow(LOOP))) {
         rm(model)
         gc()
     }
+
+    log_print(paste(area, data, sep = " -- "))
 }
+
+log_close()
