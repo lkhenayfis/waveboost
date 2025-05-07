@@ -4,7 +4,7 @@ library(data.table)
 dt1 <- as.data.table(GetAreasCarga()$results)[, .SD, .SDcols = 2:3]
 colnames(dt1) <- c("codigo_area", "nome_area")
 dt1[, nome_area := iconv(nome_area, "", "ASCII//TRANSLIT")]
-dt1 <- dt1[!(codigo_area %in% c("TO", "TOCO"))]
+dt1 <- dt1[!(codigo_area %in% c("TO", "TOCO", "RR"))]
 dt1 <- dt1[!grepl("Perdas", nome_area)]
 setorder(dt1, nome_area)
 
