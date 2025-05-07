@@ -7,13 +7,13 @@ source("data-raw/monta_info.r")
 source("creds-prevcarga.r")
 
 AmbienteAtivo("PRD")
-.INFO_AREAS <- areas <- fread("data/areasareas.csv")
+.INFO_AREAS <- areas <- fread("data/areas.csv")
 
 # Roraima por algum motivo nao tem feriados // tambem e sistema isolado, nao precisa estar aqui
 areas <- areas[codigo_area != "RR"]
 
 datahora_inicio <- as.POSIXct("2020-01-01", "UTC")
-datahora_fim <- as.POSIXct("2024-12-31 23:30:00", "UTC")
+datahora_fim <- as.POSIXct("2025-01-31 23:30:00", "UTC")
 
 JANELA <- paste0(datahora_inicio - 24 * 60 * 60, "/", datahora_fim + 24 * 60 * 60)
 
