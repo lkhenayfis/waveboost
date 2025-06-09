@@ -39,7 +39,7 @@ CONFIGS <- generate_train_configs(MODEL_PARAMS, MODEL_PARAMS_OPT)
 # --------------------------------------------------------------------------------------------------
 
 areas <- get_areas(no_subsistema = TRUE)
-datas <- c("2024-10", "2024-11", "2024-12", "2025-01")
+datas <- c("2024-10", "2024-11", "2024-12")
 LOOP <- expand.grid(data = datas, area = areas$codigo_area, stringsAsFactors = FALSE)
 
 log_print("Inicio do treinamento")
