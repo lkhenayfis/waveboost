@@ -51,76 +51,91 @@ merge_lists <- function(list1, list2) {
     return(merged)
 }
 
-# UPSAMPLING ---------------------------------------------------------------------------------------
+# RESAMPLING ---------------------------------------------------------------------------------------
 
-#' Upsample De Dados
+#' Resample De Dados
 #' 
-#' Rebaixa um dado \code{x} para resolucao \code{times} vezes menor
+#' Reamostra um dado `x` para resolucao `times` vezes a original
 #' 
-#' Se \code{times = 2}, preenche uma nova observacao interpolada entre cada duas originais; se 
-#' \code{times = 3}, preenche duas novas observacoes e assim por diante. Assim, para upsample de
-#' um dado de 3 em 3 horas para meia em meia hora, deve ser usado \code{times = 6}
+#' Esta funcao pode fazer tanto up quanto downsample de um dado, porem sempre de forma regular, i.e.
+#' sempre aumenta ou reduz a frequencia do dado mantendo intervalos homogeneos. O comportamento e
+#' governado pelo argumento `times`: se `times > 1` realiza upsample; se `times < 1`, downsample.
 #' 
-#' @param x um vetor ou data.frame-like para upsample
-#' @param times frequencia de upsample, inteiro maior que 2. Veja Detalhes
+#' Por exemplo, `times = 2` preenche uma nova observacao interpolada entre cada duas originais; se 
+#' `times = 3`, preenche duas novas observacoes e assim por diante. Assim, para resample de
+#' um dado de 3 em 3 horas para meia em meia hora, deve ser usado `times = 6`. Alternativamente,
+#' `times = .5` reduz o dado para uma a cada duas amostras, `times = 2 / 3` busca uma a cada 1.5
+#' amostras (interpolando quando necessario).
+#' 
+#' `type` governa o tipo de interpolacao/extrapolacao sendo realizada. Atualmente apenas `"linear"`
+#' e `"cubic"` sao suportados.
+#' 
+#' O argumento `expand_right` e um booleano indicando se deve ser realizada extrapolacao a direita
+#' durante reamostragem. Nos casos de upsample, `expand_right = TRUE` resultaria em `times` amostras
+#' extrapoladas ao final do dado `x`.
+#' 
+#' @param x um vetor ou data.frame-like para resample
+#' @param times frequencia de resample, inteiro maior que 2. Veja Detalhes
 #' @param type metodo de preenchimento. Atualmente sao suportados "linear", "cubic"
 #' @param expand_right booleano indicando se deve ser extrapolado a direita
-#' @param time_col se \code{x} for data.frame-like, o nome da coluna de tempo na qual basear o
-#'     upsample
-#' @param value_col se \code{x} for data.frame-like, o nome da coluna de dados para upsample
+#' @param time_col se `x` for data.frame-like, o nome da coluna de tempo na qual basear o
+#'     resample
+#' @param value_col se `x` for data.frame-like, o nome da coluna de dados para resample
 #' @param ... demais argumentos passados para as internas de interpolacao
 #' 
 #' @examples 
 #' 
-#' # caso simples de upsample de um vetor
-#' x_num <- c(1, 4, -5, 10, 7)
-#' x_num_upsampled <- upsample(x, 3, "linear")
+#' # caso simples de resample de um vetor
+#' x_num <- seq_len(12)
+#' x_num_upsampled <- resample(x_num, 2, "linear", expand_right = TRUE)
+#' x_num_downsampled <- resample(x_num, 2 / 3, "linear", expand_right = TRUE)
 #' 
 #' # com um data.table
-#' dt <- data.table(data = as.Date("2020-01-01") + seq(1, 13, 3), valor = c(1, 4, -5, 10, 7))
-#' dt_upsampled <- upsample(dt, 3, "linear", time_col = "data", value_col = "valor")
+#' dt <- data.table(data = as.Date("2020-01-01") + seq_len(6) - 1, valor = seq_len(6))
+#' dt_upsampled <- resample(dt, 2, "linear", time_col = "data", value_col = "valor")
+#' dt_downsampled <- resample(dt, 1 / 2, "linear", time_col = "data", value_col = "valor")
 #' 
-#' @return objeto \code{x} upsampled para resolucao desejada
+#' @return objeto `x` resampled para resolucao desejada
 
-upsample <- function(x, times, type = c("linear", "cubic"), expand_right = FALSE, ...) UseMethod("upsample")
+resample <- function(x, times, type = c("linear", "cubic"), expand_right = FALSE, ...) UseMethod("resample")
 
-#' @rdname upsample
+#' @rdname resample
 
-upsample.numeric <- function(x, times, type = c("linear", "cubic"), expand_right = FALSE, ...) {
+resample.numeric <- function(x, times, type = c("linear", "cubic"), expand_right = FALSE, ...) {
     type <- match.arg(type)
-    fun  <- str2lang(paste0("upsample_", type))
-    upsampled <- match.call()
-    upsampled[[1]] <- fun
-    upsampled[["type"]] <- NULL
-    upsampled <- eval(upsampled, parent.frame(), parent.frame())
+    fun  <- str2lang(paste0("resample_", type))
+    resampled <- match.call()
+    resampled[[1]] <- fun
+    resampled[["type"]] <- NULL
+    resampled <- eval(resampled, parent.frame(), parent.frame())
 
-    return(upsampled)
+    return(resampled)
 }
 
-#' @rdname upsample
+#' @rdname resample
 
-upsample.Date <- function(x, times, type = c("linear", "cubic"), expand_right = FALSE, ...) {
-    out <- upsample.numeric(as.numeric(x), times, type, expand_right, ...)
+resample.Date <- function(x, times, type = c("linear", "cubic"), expand_right = FALSE, ...) {
+    out <- resample.numeric(as.numeric(x), times, type, expand_right, ...)
     out <- as.Date(out)
     return(out)
 }
 
-#' @rdname upsample
+#' @rdname resample
 
-upsample.POSIXt <- function(x, times, type = c("linear", "cubic"), expand_right = FALSE, ...) {
+resample.POSIXt <- function(x, times, type = c("linear", "cubic"), expand_right = FALSE, ...) {
     ref <- x[1]
-    out <- upsample.numeric(as.numeric(x), times, type, expand_right, ...)
+    out <- resample.numeric(as.numeric(x), times, type, expand_right, ...)
     out <- as.POSIXct(out, attr(ref, "tzone"))
     return(out)
 }
 
-#' @rdname upsample
+#' @rdname resample
 
-upsample.list <- function(x, times, time_col, value_col,
+resample.list <- function(x, times, time_col, value_col,
     type = c("linear", "cubic"), expand_right = FALSE, ...) {
 
-    time_col_ds  <- upsample(x[[time_col]], times, "linear", expand_right, ...)
-    value_col_ds <- upsample(x[[value_col]], times, type, expand_right, ...)
+    time_col_ds  <- resample(x[[time_col]], times, "linear", expand_right, ...)
+    value_col_ds <- resample(x[[value_col]], times, type, expand_right, ...)
 
     out <- list(time_col_ds, value_col_ds)
     names(out) <- c(time_col, value_col)
@@ -128,23 +143,23 @@ upsample.list <- function(x, times, time_col, value_col,
     return(out)
 }
 
-#' @rdname upsample
+#' @rdname resample
 
-upsample.data.frame <- function(x, times, time_col, value_col,
+resample.data.frame <- function(x, times, time_col, value_col,
     type = c("linear", "cubic"), expand_right = FALSE, ...) {
 
-    out <- upsample.list(x, times, time_col, value_col, type, expand_right, ...)
+    out <- resample.list(x, times, time_col, value_col, type, expand_right, ...)
     out <- as.data.frame(out)
     return(out)
 }
 
-#' @rdname upsample
+#' @rdname resample
 
-upsample.data.table <- function(x, times, time_col, value_col,
+resample.data.table <- function(x, times, time_col, value_col,
     type = c("linear", "cubic"), expand_right = FALSE, by = "", ...) {
 
     out <- x[,
-        upsample.list(
+        resample.list(
             .(get(time_col), get(value_col)),
             times, 1, 2, type, expand_right, ...),
         by = by]
@@ -157,7 +172,7 @@ upsample.data.table <- function(x, times, time_col, value_col,
     return(out)
 }
 
-upsample_linear <- function(x, times, expand_right, ...) {
+resample_linear <- function(x, times, expand_right, ...) {
 
     if (all(is.na(x))) {
         fill <- ifelse(inherits(x, "numeric"), NA_real_, NA_integer_)

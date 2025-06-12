@@ -29,8 +29,8 @@ build_regs_quant_singleshot <- function(
     L_carga = 64, L_mmgd = 64, L_temperatura = 128,
     rolling = TRUE, ...) {
 
-    temp_obs  <- upsample_temperatura(temp_obs, "obs")
-    temp_prev <- upsample_temperatura(temp_prev, "prev")
+    temp_obs  <- resample_temperatura(temp_obs, "obs")
+    temp_prev <- resample_temperatura(temp_prev, "prev")
 
     carga <- build_carga(carga_obs, hora_execucao, L_carga)
 
@@ -46,12 +46,12 @@ build_regs_quant_singleshot <- function(
     return(reg)
 }
 
-upsample_temperatura <- function(dt, tipo = c("obs", "prev")) {
+resample_temperatura <- function(dt, tipo = c("obs", "prev")) {
     tipo <- match.arg(tipo)
     by       <- if (tipo == "obs") "codigo_area" else c("codigo_area", "datahora_execucao")
     time_col <- if (tipo == "obs") "datahora" else "datahora_previsao"
 
-    upsample(dt, 2, time_col = time_col, value_col = "temperatura", by = by, expand_right = TRUE)
+    resample(dt, 2, time_col = time_col, value_col = "temperatura", by = by, expand_right = TRUE)
 }
 
 build_carga <- function(dt, hora_execucao, L) {
