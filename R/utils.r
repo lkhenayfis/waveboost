@@ -112,6 +112,15 @@ resample.numeric <- function(x, times, type = c("linear", "cubic"), expand_right
     return(resampled)
 }
 
+resample.character <- function(x, times, type = c("linear", "cubic"), expand_right = FALSE, ...) {
+    x <- factor(x, unique(x))
+    x_int <- as.numeric(x)
+    out <- resample.numeric(x_int, times, type, expand_right, ...)
+    out <- floor(out)
+    out <- levels(x)[out]
+    return(out)
+}
+
 #' @rdname resample
 
 resample.Date <- function(x, times, type = c("linear", "cubic"), expand_right = FALSE, ...) {
@@ -131,44 +140,29 @@ resample.POSIXt <- function(x, times, type = c("linear", "cubic"), expand_right 
 
 #' @rdname resample
 
-resample.list <- function(x, times, time_col, value_col,
-    type = c("linear", "cubic"), expand_right = FALSE, ...) {
+resample.list <- function(x, times, type = c("linear", "cubic"), expand_right = FALSE, ...) {
 
-    time_col_ds  <- resample(x[[time_col]], times, "linear", expand_right, ...)
-    value_col_ds <- resample(x[[value_col]], times, type, expand_right, ...)
-
-    out <- list(time_col_ds, value_col_ds)
-    names(out) <- c(time_col, value_col)
+    out <- lapply(x, function(x_i) resample(x_i, times, type, expand_right, ...))
+    names(out) <- names(x)
 
     return(out)
 }
 
 #' @rdname resample
 
-resample.data.frame <- function(x, times, time_col, value_col,
-    type = c("linear", "cubic"), expand_right = FALSE, ...) {
+resample.data.frame <- function(x, times, type = c("linear", "cubic"), expand_right = FALSE, ...) {
 
-    out <- resample.list(x, times, time_col, value_col, type, expand_right, ...)
+    out <- resample.list(x, times, type, expand_right, ...)
     out <- as.data.frame(out)
     return(out)
 }
 
 #' @rdname resample
 
-resample.data.table <- function(x, times, time_col, value_col,
-    type = c("linear", "cubic"), expand_right = FALSE, by = "", ...) {
+resample.data.table <- function(x, times, type = c("linear", "cubic"), expand_right = FALSE,
+    by = "", ...) {
 
-    out <- x[,
-        resample.list(
-            .(get(time_col), get(value_col)),
-            times, 1, 2, type, expand_right, ...),
-        by = by]
-
-    names <- names(out)
-    names[names == "1"] <- time_col
-    names[names == "2"] <- value_col
-    names(out) <- names
-
+    out <- x[, resample.list(.SD, times, type, expand_right, ...), by = by]
     return(out)
 }
 
