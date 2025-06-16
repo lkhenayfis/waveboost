@@ -85,7 +85,7 @@ build_temp <- function(dt_obs, dt_prev, hora_execucao, L, roll) {
         temp <- combine_features(temp, "temp_obs", "temp_prev")
     }
 
-    temp <- rolling_subset(temp, L)
+    temp <- rolling_subset(temp, L, "temp_obs_c_temp_prev")
     temp <- dwt(temp, names(temp)[1], filter = "haar")
 
     temp <- as.data.table(temp)

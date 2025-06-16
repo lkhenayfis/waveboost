@@ -273,11 +273,11 @@ force_slice_hour <- function(slice, target_hour) {
 #' 
 #' Gera slice ampliado a partir de \code{x} por subsets de largura \code{window} em seus elementos
 
-rolling_subset <- function(x, window) {
+rolling_subset <- function(x, window, variable) {
     indexes <- attr(x, "index")
     out <- lapply(indexes, function(i) {
         x_i <- x[, i]
-        single_index_subset(x_i, window)
+        single_index_subset(x_i, window, variable)
     })
     out <- Reduce(c, out)
     return(out)
@@ -287,8 +287,8 @@ rolling_subset <- function(x, window) {
 #' 
 #' Auxiliar interna para \code{rolling_subset}
 
-single_index_subset <- function(x, window) {
-    out <- rollapply(x$temp_obs_c_temp_prev[[1]], window, function(v) v)
+single_index_subset <- function(x, window, variable) {
+    out <- rollapply(x[[variable]][[1]], window, function(v) v)
     out <- lapply(seq_len(nrow(out)), function(i) out[i, ])
     out <- list(out)
     names(out) <- names(x)
