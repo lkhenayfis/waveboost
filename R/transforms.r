@@ -52,3 +52,45 @@ gen_dwt_builder_lag <- function(var = "", hora_execucao = "07:30:00", L = 64) {
 
     return(fun)
 }
+
+#' Gerador De Closure Para Encoder Lagged
+#' 
+#' Produz uma closure de unico argumento para realizar encoding dwt em dado passado
+
+gen_dwt_builder_laglead <- function(var_x = "", var_y = "",
+    hora_execucao = "07:30:00", L = 128, roll = TRUE) {
+
+    fun <- function(x, y) {
+        split_L <- split_l_temp(hora_execucao, L, roll)
+        start   <- get_start(hora_execucao, head(x$datahora, 48))
+
+        y <- slice(y, var_y, "datahora_execucao", "datahora_previsao",
+            seq(start, by = 1, length.out = split_L[2]), start = 1,
+            names = paste0(var_y, "_prev"))
+
+        if (split_L[1] >= 0) {
+            x <- slice(x, var_x, "datahora", L = seq(-split_L[1] + 1, 0),
+                start = start, step = 48, names = paste0(var_x, "_obs"))
+            x <- force_slice_hour(x, "00:00:00")
+
+            out <- merge(x, y)
+            out <- combine_features(out, paste0(var_x, "_obs"), paste0(var_y, "_prev"))
+        }
+
+        out <- rolling_subset(out, L, names(out[1]))
+        out <- dwt(out, names(out)[1], filter = "haar")
+
+        as.data.table(out)
+    }
+
+    return(fun)
+}
+
+gen_resampler <- function(times = 2, by = c()) {
+
+    fun <- function(x) {
+        resample(x, times, type = "linear", by, expand_right = TRUE)
+    }
+
+    return(fun)
+}
