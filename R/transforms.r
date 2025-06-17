@@ -42,7 +42,7 @@
 #' Produz uma closure de unico argumento para realizar encoding dwt em dado passado
 
 gen_dwt_builder_lag <- function(var = "", hora_execucao = "07:30:00", L = 64,
-    time_col = "datahora") {
+    time_col = "datahora", ...) {
 
     fun <- function(x) {
         x <- build_lagged_slice(x, var, L, hora_execucao, time_col = time_col)
@@ -59,7 +59,7 @@ gen_dwt_builder_lag <- function(var = "", hora_execucao = "07:30:00", L = 64,
 #' Produz uma closure de unico argumento para realizar encoding dwt em dado passado
 
 gen_dwt_builder_laglead <- function(var_x = "", var_y = "",
-    hora_execucao = "07:30:00", L = 128, roll = TRUE) {
+    hora_execucao = "07:30:00", L = 128, roll = TRUE, ...) {
 
     fun <- function(x, y) {
         split_L <- split_l_temp(hora_execucao, L, roll)
@@ -87,7 +87,7 @@ gen_dwt_builder_laglead <- function(var_x = "", var_y = "",
     return(fun)
 }
 
-gen_resampler <- function(times = 2, by = c()) {
+gen_resampler <- function(times = 2, by = c(), ...) {
 
     fun <- function(x) {
         resample(x, times, type = "linear", by, expand_right = TRUE)
@@ -103,7 +103,7 @@ gen_resampler <- function(times = 2, by = c()) {
 #' Essa aqui esta um pouco mais marretada do que poderia ser, so vai funcionar se utilizada com 
 #' dado de carga ou temperatura observada diretamente
 
-gen_merger_feriado <- function(modo = "simples", pos = TRUE, pre = TRUE) {
+gen_merger_feriado <- function(modo = "simples", pos = TRUE, pre = TRUE, ...) {
 
     fun <- function(x, feriados) {
         feriados <- feriados[, .("date" = data, "feriado" = get(modo))]
@@ -125,7 +125,7 @@ gen_merger_feriado <- function(modo = "simples", pos = TRUE, pre = TRUE) {
 
 gen_timefeature_adder <- function(time_col = "datahora",
     timefeatures = list("month" = "data.table::month", "wday" = "data.table::wday",
-        "hourmin" = "function(x) data.table::hour(x) + data.table::minute(x) / 60")) {
+        "hourmin" = "function(x) data.table::hour(x) + data.table::minute(x) / 60"), ...) {
 
     f_timefeatures <- sapply(timefeatures, function(tf) eval(parse(text = tf)))
 
