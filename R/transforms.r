@@ -122,3 +122,25 @@ gen_merger_feriado <- function(modo = "simples", pos = TRUE, pre = TRUE) {
     }
 
 }
+
+gen_timefeature_adder <- function(time_col = "datahora",
+    timefeatures = list("month" = "data.table::month", "wday" = "data.table::wday",
+        "hourmin" = "function(x) data.table::hour(x) + data.table::minute(x) / 60")) {
+
+    f_timefeatures <- sapply(timefeatures, function(tf) eval(parse(text = tf)))
+
+    n_timefeatures <- names(timefeatures)
+    if (is.null(n_timefeatures)) n_timefeatures <- paste0("timefeature_", seq_along(timefeatures))
+
+    fun <- function(x) {
+        out <- lapply(f_timefeatures, function(f) f(x[[time_col]]))
+        names(out) <- n_timefeatures
+        out <- as.data.table(out)
+        out[[time_col]] <- x[[time_col]]
+        setcolorder(out, time_col)
+
+        return(out)
+    }
+
+    return(fun)
+}
