@@ -94,3 +94,30 @@ gen_resampler <- function(times = 2, by = c()) {
 
     return(fun)
 }
+
+#' Gerador De Merger Com Dado De Feriados
+#' 
+#' Produz closure de dois argumentos (dado alvo e calendario de feriados) para unir informacoes
+#' 
+#' Essa aqui esta um pouco mais marretada do que poderia ser, so vai funcionar se utilizada com 
+#' dado de carga ou temperatura observada diretamente
+
+gen_merger_feriado <- function(modo = "simples", pos = TRUE, pre = TRUE) {
+
+    fun <- function(x, feriados) {
+        feriados <- feriados[, .("date" = data, "feriado" = get(modo))]
+
+        out <- x[, .(datahora, "date" = as.Date(datahora))]
+        out <- merge(out, feriados, by = "date", all = TRUE)
+        out[is.na(feriado), feriado := 0]
+
+        if (pre) out[, pre_feriado := shift(feriado, -1)]
+        if (pos) out[, pos_feriado := shift(feriado,  1)]
+
+        out[, date := NULL]
+        out <- out[datahora %between% range(x$datahora)]
+
+        return(out)
+    }
+
+}
