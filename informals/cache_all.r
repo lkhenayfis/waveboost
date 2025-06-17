@@ -1,11 +1,6 @@
-source("R/leitura.r")
-source("R/utils.r")
-source("R/build_regressores.r")
-source("R/data-registry.r")
-source("R/models.r")
+source("R/waveboost.r")
 
-areas <- get_areas()
-areas <- areas[!grepl("Subsistema", nome_area)]
+areas <- get_areas(TRUE)
 
 model_params <- default_model_params_ego("M")
 
