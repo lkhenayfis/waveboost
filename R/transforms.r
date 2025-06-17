@@ -41,10 +41,11 @@
 #' 
 #' Produz uma closure de unico argumento para realizar encoding dwt em dado passado
 
-gen_dwt_builder_lag <- function(var = "", hora_execucao = "07:30:00", L = 64) {
+gen_dwt_builder_lag <- function(var = "", hora_execucao = "07:30:00", L = 64,
+    time_col = "datahora") {
 
     fun <- function(x) {
-        x <- build_lagged_slice(x, var, L, hora_execucao)
+        x <- build_lagged_slice(x, var, L, hora_execucao, time_col = time_col)
         x <- replicate_slice_day_ahead(x)
         x <- as.data.table(x)
         x
