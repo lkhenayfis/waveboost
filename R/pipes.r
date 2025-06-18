@@ -10,11 +10,26 @@
 #' @return lista `raw_pipe` com elemento `"transforms"` avaliado para as closures definidas
 
 parse_single_pipe <- function(raw_pipe) {
-    raw_pipe$transforms <- lapply(raw_pipe$transforms, function(l) {
-        l$fun <- str2lang(l$fun)
-        cc <- as.call(l)
-        eval(cc, parent.frame(), parent.frame())
-    })
+    args <- lapply(raw_pipe$on, str2lang)
+    names(args) <- c("x", "y")[seq_along(args)]
+
+    l_t <- raw_pipe$transforms
+
+    cc <- c(l_t[[1]], args)
+    cc[[1]] <- str2lang(cc[[1]])
+    raw_pipe$transforms[[1]] <- eval(as.call(cc), parent.frame(), parent.frame())
+    x <- do.call(raw_pipe$transforms[[1]], args)
+
+    l_t[[1]] <- NULL
+    if (length(l_t) >= 1) {
+        for (i in seq_along(l_t)) {
+            cc <- c(l_t[[i]], list(x = x))
+            cc[[1]] <- str2lang(cc[[1]])
+            raw_pipe$transforms[[i + 1]] <- eval(as.call(cc), parent.frame(), parent.frame())
+            x <-  do.call(raw_pipe$transforms[[i + 1]], list(x = x))
+        }
+    }
+
     return(raw_pipe)
 }
 
@@ -51,8 +66,8 @@ eval_single_pipe <- function(pipe) {
     x <- eval(as.call(cc), parent.frame(), parent.frame())
     l_t[[1]] <- NULL
 
-    if (length(l_t) > 1) {
-        for (f in seq_along(l_t)) {
+    if (length(l_t) >= 1) {
+        for (f in l_t) {
             cc <- list(f, x)
             x <- eval(as.call(cc), parent.frame(), parent.frame())
         }
