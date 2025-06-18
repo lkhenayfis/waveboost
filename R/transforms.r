@@ -116,15 +116,16 @@ gen_merger_feriado <- function(modo = "simples", pos = TRUE, pre = TRUE, ...) {
     fun <- function(x, y) {
         y <- y[, .("date" = data, "feriado" = get(modo))]
 
+        ref <- data.table(date = seq.Date(min(y$date), max(y$date), by = "1 day"))
+        ref <- merge(ref, y, by = "date", all = TRUE)
+        ref[is.na(feriado), feriado := 0]
+
+        if (pre) ref[, pre_feriado := shift(feriado, -1, fill = 0)]
+        if (pos) ref[, pos_feriado := shift(feriado,  1, fill = 0)]
+
         out <- x[, .(datahora, "date" = as.Date(datahora))]
-        out <- merge(out, y, by = "date", all = TRUE)
-        out[is.na(feriado), feriado := 0]
-
-        if (pre) out[, pre_feriado := shift(feriado, -1)]
-        if (pos) out[, pos_feriado := shift(feriado,  1)]
-
+        out <- merge(out, ref, by = "date", all.x = TRUE)
         out[, date := NULL]
-        out <- out[datahora %between% range(x$datahora)]
 
         return(out)
     }
