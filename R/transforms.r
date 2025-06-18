@@ -135,7 +135,7 @@ gen_merger_feriado <- function(modo = "simples", pos = TRUE, pre = TRUE, keep = 
         out[, date := NULL]
 
         if (!is.null(keep)) {
-            dt_keep <- x[, .SD, .SDcols = keep]
+            dt_keep <- x[, .SD, .SDcols = unlist(keep)]
             out <- cbind(out, dt_keep)
         }
 
@@ -173,7 +173,7 @@ gen_timefeature_adder <- function(time_col = "datahora", timefeatures = default_
         out[[time_col]] <- x[[time_col]]
 
         if (!is.null(keep)) {
-            dt_keep <- x[, .SD, .SDcols = keep]
+            dt_keep <- x[, .SD, .SDcols = unlist(keep)]
             out <- cbind(out, dt_keep)
         }
 
@@ -243,6 +243,24 @@ gen_lagged_var_builder <- function(var = "", lags = 96, time_col = "datahora", .
     }
 }
 
-gen_seasonal_pattern_builder <- function(var = "", by = c(), ..., x) {
-    
+#' Gerador De Closure Para Padrao Sazonal
+#' 
+#' Produz uma closure de unico argumento para obter padrao sazonal de uma variavel
+
+gen_seasonal_pattern_adder <- function(var = "", time_col = "datahora", by = c(), x, ...) {
+
+    by <- unlist(by)
+    seasonal_pat <- x[, .(pattern = mean(get(var))), by = by]
+
+    # evita guardar um dado inteiro a toa
+    rm(x)
+
+    fun <- function(x) {
+        x <- merge(x, seasonal_pat, by = by, all.x = TRUE)
+        x[is.na(pattern), pattern := 0]
+        setorderv(x, time_col)
+        x[, .(get(time_col), pattern)]
+    }
+
+    return(fun)
 }
