@@ -17,9 +17,11 @@ get_carga_observada <- function(areas, janela = "2020/2024", conn = .CONEXAO_BAN
 }
 
 get_temperatura_observada <- function(areas, janela = "2020/2024", conn = .CONEXAO_BANCO) {
-    getfromdb(conn, "temperatura_observada", codigo_area = areas, datahora = janela)
+    d <- getfromdb(conn, "temperatura_observada", codigo_area = areas, datahora = janela)
+    resample(d, 2, expand_right = TRUE)
 }
 
 get_temperatura_prevista <- function(areas, janela = "2020/2024", conn = .CONEXAO_BANCO) {
-    getfromdb(conn, "temperatura_prevista", codigo_area = areas, datahora_execucao = janela)
+    d <- getfromdb(conn, "temperatura_prevista", codigo_area = areas, datahora_execucao = janela)
+    resample(d, 2, expand_right = TRUE, by = "datahora_execucao")
 }

@@ -29,9 +29,6 @@ build_regs_quant_singleshot <- function(
     L_carga = 64, L_mmgd = 64, L_temperatura = 128,
     rolling = TRUE, ...) {
 
-    temp_obs  <- resample_temperatura(temp_obs, "obs")
-    temp_prev <- resample_temperatura(temp_prev, "prev")
-
     carga <- build_carga(carga_obs, hora_execucao, L_carga)
 
     if (L_mmgd > 0) {
