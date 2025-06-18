@@ -129,6 +129,7 @@ gen_merger_feriado <- function(modo = "simples", pos = TRUE, pre = TRUE, ...) {
         return(out)
     }
 
+    return(fun)
 }
 
 #' Gerador De Aditor De Timefeatures
