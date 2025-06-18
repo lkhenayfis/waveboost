@@ -137,14 +137,17 @@ gen_merger_feriado <- function(modo = "simples", pos = TRUE, pre = TRUE, ...) {
 #' 
 #' Produz closure de unico argumento para montar features a partir de coluna de tempo em um dado `x`
 #' 
+#' `keep` normalmente nao tem uso se a intencao e gerar e utilizar timefeatures como regressores. O
+#' argumento so existe para uso concatenado com outras transformadas
+#' 
 #' @param time_col a coluna de data ou datahora em `x` em qual operar
 #' @param timefeatures lista nomeada de funcoes a serem aplicadas. Podem ser quaisquer funcoes que
 #'     o programa tenha disponiveis durante execucao, sejam elas importadas de dependencias ou 
 #'     declaradas internamente. Adicionalmente, podem ser declaradas funcoes anonimas como string
+#' @param keep outras colunas que podem ser mantidas no dado. Ver Detalhes
 
-gen_timefeature_adder <- function(time_col = "datahora",
-    timefeatures = list("month" = "data.table::month", "wday" = "data.table::wday",
-        "hourmin" = "function(x) data.table::hour(x) + data.table::minute(x) / 60"), ...) {
+gen_timefeature_adder <- function(time_col = "datahora", timefeatures = default_timefeatures(),
+    keep = NULL, ...) {
 
     f_timefeatures <- sapply(timefeatures, function(tf) eval(parse(text = tf)))
 
@@ -156,12 +159,26 @@ gen_timefeature_adder <- function(time_col = "datahora",
         names(out) <- n_timefeatures
         out <- as.data.table(out)
         out[[time_col]] <- x[[time_col]]
+
+        if (!is.null(keep)) {
+            dt_keep <- x[, .SD, .SDcols = keep]
+            out <- cbind(out, dt_keep)
+        }
+
         setcolorder(out, time_col)
 
         return(out)
     }
 
     return(fun)
+}
+
+default_timefeatures <- function() {
+    list(
+        "month" = "data.table::month",
+        "wday" = "data.table::wday",
+        "hourmin" = "function(x) data.table::hour(x) + data.table::minute(x) / 60"
+    )
 }
 
 #' Gerador De Closure Para Sumario Lagged
@@ -212,4 +229,8 @@ gen_lagged_var_builder <- function(var = "", lags = 96, time_col = "datahora", .
         x <- x[complete.cases(x)]
         x
     }
+}
+
+gen_seasonal_pattern_builder <- function(var = "", by = c(), x, y) {
+    
 }
