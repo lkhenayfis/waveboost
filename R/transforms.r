@@ -110,8 +110,15 @@ gen_resampler <- function(times = 2, by = c(), ...) {
 #' 
 #' Essa aqui esta um pouco mais marretada do que poderia ser, so vai funcionar se utilizada com 
 #' dado de carga ou temperatura observada diretamente
+#' 
+#' `keep` normalmente nao tem uso se a intencao e gerar e utilizar timefeatures como regressores. O
+#' argumento so existe para uso concatenado com outras transformadas
+#' 
+#' @param modo o tipo de categorizacao de feriado a usar
+#' @param pre,pos booleanos indicando se colunas de pre e pos feriado devem ser criadas
+#' @param keep outras colunas que podem ser mantidas no dado. Ver Detalhes
 
-gen_merger_feriado <- function(modo = "simples", pos = TRUE, pre = TRUE, ...) {
+gen_merger_feriado <- function(modo = "simples", pos = TRUE, pre = TRUE, keep = NULL, ...) {
 
     fun <- function(x, y) {
         y <- y[, .("date" = data, "feriado" = get(modo))]
@@ -126,6 +133,11 @@ gen_merger_feriado <- function(modo = "simples", pos = TRUE, pre = TRUE, ...) {
         out <- x[, .(datahora, "date" = as.Date(datahora))]
         out <- merge(out, ref, by = "date", all.x = TRUE)
         out[, date := NULL]
+
+        if (!is.null(keep)) {
+            dt_keep <- x[, .SD, .SDcols = keep]
+            out <- cbind(out, dt_keep)
+        }
 
         return(out)
     }
@@ -231,6 +243,6 @@ gen_lagged_var_builder <- function(var = "", lags = 96, time_col = "datahora", .
     }
 }
 
-gen_seasonal_pattern_builder <- function(var = "", by = c(), x, y) {
+gen_seasonal_pattern_builder <- function(var = "", by = c(), ..., x) {
     
 }
