@@ -194,3 +194,21 @@ summary.slice_artifact <- function(x, variables, ...) {
 
     shapeshiftr:::new_slice_artifact(summ_list, attr(x, "index"), NA)
 }
+
+#' Gerador De Closure Para Variaveis Lagged
+#' 
+#' Produz uma closure de unico argumento para obter lags de variavel
+
+gen_lagged_var_builder <- function(var = "", lags = 96, time_col = "datahora", ...) {
+    names(lags) <- paste0(var, "_lag", lags)
+
+    fun <- function(x) {
+        x <- x[, .(index = get(time_col), var = get(var))]
+        dt_lags <- lapply(lags, function(l) shift(x$var, l))
+        dt_lags <- as.data.table(dt_lags)
+        x <- cbind(x, dt_lags)
+        x[, var := NULL]
+        x <- x[complete.cases(x)]
+        x
+    }
+}
