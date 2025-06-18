@@ -195,11 +195,17 @@ resample_linear <- function(x, times, expand_right, ...) {
 
 build_lagged_slice <- function(dt, value_col, max_lag,
     start_time = "07:30:00", time_col = "datahora",
-    transform = function(x) dwt(x, value_col, filter = "haar")) {
+    transform = function(x) dwt(x, value_col, filter = "haar"),
+    step = 48) {
+
+    if (length(max_lag) == 1) {
+        L <- seq(-max_lag + 1, 0)
+    } else {
+        L <- sort(-as.numeric(max_lag))
+    }
 
     start <- get_start(start_time, head(dt[[time_col]], 48))
-    slice <- slice(dt, value_col, time_col, L = seq(-max_lag + 1, 0),
-        start = start, step = 48)
+    slice <- slice(dt, value_col, time_col, L = L, start = start, step = step)
     slice <- transform(slice)
 
     return(slice)
