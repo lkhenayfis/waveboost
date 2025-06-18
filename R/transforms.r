@@ -1,6 +1,4 @@
 
-# CLOSURE GENERATORS -------------------------------------------------------------------------------
-
 #' Definicoes De Geradores De Closure
 #' 
 #' Funcoes que geram as closures utilizadas para preparo dos regressores em tempo de treino/previsao
@@ -20,10 +18,16 @@
 #' `data.table`s nos quais a closure opera e serao um dos `data.table`s de dados disponiveis em 
 #' tempo de execucao (carga, temperatura obs/prev e feriados).
 #' 
-#' De forma similar, todas elas devem retornar `data.table`s que seram combinados via `merge` para
+#' De forma similar, todas elas devem retornar `data.table`s que serao combinados via `merge` para
 #' construcao do dado de regressores finais. Este `merge` sera realizado pela primeira coluna de 
 #' cada `data.table`, entao deve ser garantido pelo retorno da closure que esta seja a coluna 
 #' correta.
+#' 
+#' Os argumentos das geradoras que parametrizam as closures retornadas devem ser todos do tipo 
+#' keyword, isto e, devem ter valores default. Em alguns casos a transformacao deve ser "treinada"
+#' em algum dado; nestes casos a geradora deve possuir AO FINAL um argumento `x` que sera 
+#' automaticamente substituido pelo dado definido em "on" no json de pipes. Para manutencao de
+#' consistencia, todas as geradoras devem possuir o argumento variatico `...`.
 #' 
 #' ## Boas praticas
 #' 
@@ -35,7 +39,7 @@
 #' Tudo o que nao for necessario para a execucao da closure DEVE SER REMOVIDO DO AMBIENTE antes do
 #' retorno.
 
-# --------------------------------------------------------------------------------------------------
+# CLOSURE GENERATORS -------------------------------------------------------------------------------
 
 #' Gerador De Closure Para Encoder Lagged
 #' 
@@ -87,6 +91,10 @@ gen_dwt_builder_laglead <- function(var_x = "", var_y = "",
     return(fun)
 }
 
+#' Gerador De Closure Para Resample
+#' 
+#' Produz uma closure de unico argumento para reamostrar um dado `x`
+
 gen_resampler <- function(times = 2, by = c(), ...) {
 
     fun <- function(x) {
@@ -122,6 +130,15 @@ gen_merger_feriado <- function(modo = "simples", pos = TRUE, pre = TRUE, ...) {
     }
 
 }
+
+#' Gerador De Aditor De Timefeatures
+#' 
+#' Produz closure de unico argumento para montar features a partir de coluna de tempo em um dado `x`
+#' 
+#' @param time_col a coluna de data ou datahora em `x` em qual operar
+#' @param timefeatures lista nomeada de funcoes a serem aplicadas. Podem ser quaisquer funcoes que
+#'     o programa tenha disponiveis durante execucao, sejam elas importadas de dependencias ou 
+#'     declaradas internamente. Adicionalmente, podem ser declaradas funcoes anonimas como string
 
 gen_timefeature_adder <- function(time_col = "datahora",
     timefeatures = list("month" = "data.table::month", "wday" = "data.table::wday",
