@@ -105,11 +105,11 @@ gen_resampler <- function(times = 2, by = c(), ...) {
 
 gen_merger_feriado <- function(modo = "simples", pos = TRUE, pre = TRUE, ...) {
 
-    fun <- function(x, feriados) {
-        feriados <- feriados[, .("date" = data, "feriado" = get(modo))]
+    fun <- function(x, y) {
+        y <- y[, .("date" = data, "feriado" = get(modo))]
 
         out <- x[, .(datahora, "date" = as.Date(datahora))]
-        out <- merge(out, feriados, by = "date", all = TRUE)
+        out <- merge(out, y, by = "date", all = TRUE)
         out[is.na(feriado), feriado := 0]
 
         if (pre) out[, pre_feriado := shift(feriado, -1)]
