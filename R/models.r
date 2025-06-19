@@ -133,6 +133,10 @@ train_EGO_CV <- function(data, model_params, nfolds, cv_results_only = FALSE, ..
     folds <- rep(rep(seq_len(nfolds), each = 7 * 48), length.out = nrow(data))
     folds <- split(seq_len(nrow(data)), folds)
 
+    cat_vars <- sapply(data, inherits, what = "factor")
+    cat_vars <- names(data)[cat_vars]
+    model_params$categorical_variables <- cat_vars
+
     dataset <- lgb.Dataset(
         data.matrix(data[, .SD, .SDcols = -c("index", "cargaglobalcons")]),
         label = data$cargaglobalcons,
