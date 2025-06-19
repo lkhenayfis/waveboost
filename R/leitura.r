@@ -7,9 +7,13 @@ get_areas <- function(no_subsistemas = FALSE, conn = .CONEXAO_BANCO) {
     d
 }
 
-get_feriados <- function(areas, conn = .CONEXAO_BANCO) {
+get_feriados <- function(areas, as_factor = TRUE, conn = .CONEXAO_BANCO) {
     d <- getfromdb(conn, "feriados", codigo_area = areas)
     d[, simples := rep(1L, .N)]
+    if (as_factor) {
+        d[] <- lapply(d, function(x) if (inherits(x, "integer")) as.factor(x) else x)
+    }
+    d
 }
 
 get_carga_observada <- function(areas, janela = "2020/2024", conn = .CONEXAO_BANCO) {
