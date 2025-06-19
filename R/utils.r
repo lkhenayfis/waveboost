@@ -346,7 +346,7 @@ get_start <- function(hora, vec) {
 scale2 <- function(dt, reference_dt = NULL, ...) UseMethod("scale2", reference_dt)
 
 scale2.NULL <- function(dt, reference_dt,
-    ignore_classes = c("character", "integer", "POSIXt", "Date")) {
+    ignore_classes = c("character", "factor", "integer", "POSIXt", "Date")) {
 
     ignore_cols <- lapply(dt, inherits, what = ignore_classes)
     means <- mapply(dt, ignore_cols, FUN = function(x, b) ifelse(b, 0, mean(x)))
