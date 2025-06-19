@@ -580,14 +580,14 @@
       "RemoteHost": "api.github.com",
       "RemoteRepo": "shapeshiftr",
       "RemoteUsername": "lkhenayfis",
-      "RemoteRef": "HEAD",
-      "RemoteSha": "a595ffa17f48f5dbe4fa476aab3e13aa65931a9d",
+      "RemoteRef": "stats-methods",
+      "RemoteSha": "790aa4ca490ad8daf3fa20624c2df513006b3cf3",
       "Requirements": [
         "R",
         "data.table",
         "wavelets"
       ],
-      "Hash": "ed40133a87c749c93110a895bef1c8e2"
+      "Hash": "f741b93d2eca0adc74b5b4ae84e3171a"
     },
     "sys": {
       "Package": "sys",
