@@ -197,32 +197,30 @@ default_timefeatures <- function() {
 #' 
 #' Produz uma closure de unico argumento para calcular sumario em dado passado
 
-gen_descstats_builder_lag <- function(var = "", L = 1:48, time_col = "datahora", ...) {
+gen_descstats_builder_lag <- function(var = "", L = 1:48, time_col = "datahora",
+    funs = c("mean", "max", "min"), ...) {
+
+    calls <- lapply(funs, function(f) as.call(c(list(str2lang(f)), list(...))))
+
+    apply_funs <- function(x) {
+        out <- lapply(calls, function(call) {
+            call$x <- x
+            out <- eval(call)
+            names(out) <- paste0(names(out), "_", as.character(call[[1]]))
+            out
+        })
+        Reduce(merge, out)
+    }
 
     fun <- function(x) {
         # usa 00:00:00 como hora execucao so para ficarem argumentos mais interpretaveis
-        x <- build_lagged_slice(x, var, L, "00:00:00", time_col, summary)
+        x <- build_lagged_slice(x, var, L, "00:00:00", time_col, apply_funs)
         x <- replicate_slice_day_ahead(x)
         x <- as.data.table(x)
         x
     }
 
     return(fun)
-}
-
-summary.slice_artifact <- function(x, variables, ...) {
-    if (missing("variables")) variables <- names(x)
-
-    x <- na.exclude(x)
-    summ_list <- lapply(x[variables], function(v) {
-        lapply(v, function(v_i) {
-            out <- summary(v_i, ...)
-            names(out) <- c("min", "1st_quant", "median", "mean", "3rd_quant", "max")
-            out
-        })
-    })
-
-    shapeshiftr:::new_slice_artifact(summ_list, attr(x, "index"), NA)
 }
 
 #' Gerador De Closure Para Variaveis Lagged
