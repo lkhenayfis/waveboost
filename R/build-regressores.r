@@ -130,7 +130,7 @@ add_feriados <- function(reg, feriados, pre, pos, modo) {
 
     regdates <- reg[, .("date" = unique(as.Date(index)))]
     regdates <- merge(regdates, feriados, by = "date", all = TRUE)
-    regdates[is.na(feriado), feriado := 0]
+    regdates[is.na(feriado), feriado := "-1"]
 
     if (pre) regdates[, pre_feriado := shift(feriado, -1)]
     if (pos) regdates[, pos_feriado := shift(feriado,  1)]

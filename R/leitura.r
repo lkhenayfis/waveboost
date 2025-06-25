@@ -11,7 +11,9 @@ get_feriados <- function(areas, as_factor = TRUE, conn = .CONEXAO_BANCO) {
     d <- getfromdb(conn, "feriados", codigo_area = areas)
     d[, simples := rep(1L, .N)]
     if (as_factor) {
-        d[] <- lapply(d, function(x) if (inherits(x, "integer")) as.factor(x) else x)
+        d[] <- lapply(d,
+            function(x) if (inherits(x, "integer")) factor(x, levels = unique(c(-1, x))) else x
+        )
     }
     d
 }
