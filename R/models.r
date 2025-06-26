@@ -51,37 +51,36 @@
 #' @param test_config lista configurando o tipo e parametros de teste do modelo. Veja Detalhes
 #' @param ... apenas para uso interno
 
-EGO <- function(
-    carga, temp_obs, temp_prev, feriados,
-    model_params = default_model_params_ego("M"),
-    test_config = default_test_config_ego("cv"),
+EGO <- function(carga, temp_obs, temp_prev, feriados,
+    model_params = list(num_leaves = 8, min_data_in_leaf = 100),
+    test_config = list(modo = "cv", nfolds = 4),
+    data_pipes = default_data_pipes(),
     ...) {
 
-    test_config  <- merge_lists(test_config,  default_test_config_ego("cv"))
-    model_params <- merge_lists(model_params, default_model_params_ego("M"))
-
-    split <- match_fun_args(model_params, build_regs_quant_singleshot)
-    data <- do.call(build_cache_data_quant_ego, list(carga, temp_obs, temp_prev, split[[1]]))
-
-    split <- match_fun_args(split[[2]], add_regs_quali)
-    data  <- do.call(add_regs_quali, c(list(data, feriados), split[[1]]))
+    parsed_data_pipes <- parse_pipes(data_pipes)
+    data <- eval_pipes(parsed_data_pipes)
 
     data <- merge(data, carga[, .(datahora, cargaglobalcons)], by.x = "index", by.y = "datahora")
 
     data <- scale2(data)
     ref  <- hollow_reference(data)
 
-    form  <- if (model_params$trend) cargaglobalcons ~ index else cargaglobalcons ~ 1
-    trend <- lm2(form, data)
+    trend <- lm2(cargaglobalcons ~ index, data)
     data[, cargaglobalcons := cargaglobalcons - predict(trend, data)]
 
-    model <- train_EGO(data, split[[2]], test_config, ...)
+    model <- train_EGO(data, model_params, test_config, ...)
 
-    new_EGO(model, model_params, trend, ref)
+    new_EGO(model, model_params, test_config, parsed_data_pipes, trend, ref)
 }
 
-new_EGO <- function(model, model_params, trend, scales) {
-    new <- list(model = model, trend = trend, scales = scales, params = model_params)
+new_EGO <- function(model, model_params, test_config, data_pipes, trend, scales) {
+    new <- list(
+        model = model,
+        model_params = model_params,
+        test_config = test_config,
+        data_pipes = data_pipes,
+        trend = trend,
+        scales = scales)
     class(new) <- "EGO"
 
     return(new)
@@ -167,12 +166,7 @@ train_EGO_CV <- function(data, model_params, nfolds, cv_results_only = FALSE, ..
 
 predict.EGO <- function(object, carga, temp_obs, temp_prev, feriados, ...) {
 
-    split <- match_fun_args(object$params, build_regs_quant_singleshot)
-    data <- do.call(build_cache_data_quant_ego, list(carga, temp_obs, temp_prev, split[[1]]))
-
-    split <- match_fun_args(split[[2]], add_regs_quali)
-    data  <- do.call(add_regs_quali, c(list(data, feriados), split[[1]]))
-
+    data <- eval_pipes(object$data_pipes)
     data <- scale2(data, object$scales)
 
     pred <- predict(object$model, data.matrix(data[, .SD, .SDcols = -c("index")]))
@@ -219,68 +213,48 @@ build_cache_data_quant_ego <- function(carga, temp_obs, temp_prev, params,
     return(data)
 }
 
-#' Auxiliar Para Construcao De Parametros
+#' Auxiliar Para Construcao De Pipes Default
 #' 
-#' Helper para definicao de templates de parametros para modelo EGO
-#' 
-#' O unico argumento desta funcao, `modo`, permite gerar listas de parametros templatizadas
-#' mais facilmente. Cada valor de modo corresponde a seguinte configuracao de tamanhos de encoding
-#' 
-#' * S: 32 valores de carga e 64 de temperatura
-#' * M: padrao, 64 valores de carga e 128 de temperatura
-#' * L: 64 valores de carga, 64 valores de mmgd e 128 de temperatura
-#' * XL: 64 valores de carga, 64 valores de mmgd, 64 valores de heatindex e 128 de temperatura
-#' 
-#' Em todos os casos a lista retornada contera os defaults
-#' 
-#' * `trend = TRUE`
-#' * `hora_execucao = "07:30:00"`
-#' * `roll = TRUE`
-#'
-#' @param modo um de `c("M", "S", "L", "XL")` indicando o tamanho do modelo. Veja Detalhes
+#' Wrapper simples para definicao da lista de pipes padrao de modelo EGO
 
-default_model_params_ego <- function(modo = c("M", "S", "L", "XL")) {
-    modo    <- match.arg(modo)
-    L_carga <- switch(modo, "S" = 32, "M" = 64, "L" = 64, "XL" = 64)
-    L_mmgd  <- switch(modo, "S" =  0, "M" =  0, "L" = 64, "XL" = 64)
-    L_heatindex   <- switch(modo, "S" =  0, "M" =   0, "L" =   0, "XL" = 64)
-    L_temperatura <- switch(modo, "S" = 64, "M" = 128, "L" = 128, "XL" = 128)
-
-    params <- list(
-        L_carga = L_carga,
-        L_mmgd = L_mmgd,
-        L_heatindex = L_heatindex,
-        L_temperatura = L_temperatura,
-        trend = TRUE,
-        hora_execucao = "07:30:00",
-        roll = TRUE
+default_data_pipes <- function() {
+    pipes <- list(
+        list(
+            on =  list("carga"),
+            transforms =  list(
+                list(
+                    fun =  "gen_dwt_builder_lag",
+                    var =  "cargaglobalcons", hora_execucao = "07:30:00", L = 64
+                )
+            )
+        ),
+        list(
+            on =  list("carga", "feriados"),
+            transforms =  list(
+                list(
+                    fun =  "gen_merger_feriado"
+                )
+            )
+        ),
+        list(
+            on = list("carga"),
+            transforms = list(
+                list(
+                    fun = "gen_timefeature_adder"
+                )
+            )
+        ),
+        list(
+            on = list("temp_obs", "temp_prev"),
+            transforms = list(
+                list(
+                    fun = "gen_dwt_builder_laglead",
+                    var_x = "temperatura", var_y = "temperatura",
+                    hora_execucao = "07:30:00", L = 128, roll = TRUE
+                )
+            )
+        )
     )
 
-    return(params)
-}
-
-#' Auxiliar Para Configuracao De Teste
-#' 
-#' Helper para definicao de templates de parametros para teste de modelo EGO
-#' 
-#' O unico argumento desta funcao, `modo`, permite gerar listas de parametros templatizadas
-#' mais facilmente. Existem duas opcoes
-#' 
-#' * `"cv"`: corresponde a validacao cruzada com 5 folds
-#' * `"split"`: separacao do dado em treino/teste tradicional com treino nos 30% finais do dado
-#'
-#' @param modo um de `c("cv", "split")`. Veja Detalhes
-
-default_test_config_ego <- function(modo = c("cv", "split")) {
-    modo <- match.arg(modo)
-
-    if (modo == "cv") {
-        params <- list(nfolds = 4)
-    } else {
-        params <- list(frac = .3, where = "tail")
-    }
-
-    config <- c(list(modo = modo), params)
-
-    return(config)
+    return(pipes)
 }
