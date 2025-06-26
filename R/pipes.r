@@ -17,7 +17,7 @@ parse_single_pipe <- function(raw_pipe) {
 
     cc <- c(l_t[[1]], args)
     cc[[1]] <- str2lang(cc[[1]])
-    raw_pipe$transforms[[1]] <- eval(as.call(cc), parent.frame(), parent.frame())
+    raw_pipe$transforms[[1]] <- eval(as.call(cc), parent.frame(3), parent.frame(3))
 
     l_t[[1]] <- NULL
     if (length(l_t) >= 1) {
@@ -25,7 +25,7 @@ parse_single_pipe <- function(raw_pipe) {
         for (i in seq_along(l_t)) {
             cc <- c(l_t[[i]], list(x = x))
             cc[[1]] <- str2lang(cc[[1]])
-            raw_pipe$transforms[[i + 1]] <- eval(as.call(cc), parent.frame(), parent.frame())
+            raw_pipe$transforms[[i + 1]] <- eval(as.call(cc), parent.frame(3), parent.frame(3))
             x <-  do.call(raw_pipe$transforms[[i + 1]], list(x = x))
         }
     }
@@ -63,13 +63,13 @@ eval_single_pipe <- function(pipe) {
     l_t <- pipe$transforms
 
     cc <- c(list(l_t[[1]]), args)
-    x <- eval(as.call(cc), parent.frame(), parent.frame())
+    x <- eval(as.call(cc), parent.frame(3), parent.frame(3))
     l_t[[1]] <- NULL
 
     if (length(l_t) >= 1) {
         for (f in l_t) {
             cc <- list(f, x)
-            x <- eval(as.call(cc), parent.frame(), parent.frame())
+            x <- eval(as.call(cc), parent.frame(3), parent.frame(3))
         }
     }
 
