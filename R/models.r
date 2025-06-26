@@ -57,6 +57,8 @@ EGO <- function(carga, temp_obs, temp_prev, feriados,
     data_pipes = default_data_pipes(),
     ...) {
 
+    areas <- carga[, unique(codigo_area)]
+
     parsed_data_pipes <- parse_pipes(data_pipes)
     data <- eval_pipes(parsed_data_pipes)
 
@@ -70,10 +72,12 @@ EGO <- function(carga, temp_obs, temp_prev, feriados,
 
     model <- train_EGO(data, model_params, test_config, ...)
 
-    new_EGO(model, model_params, test_config, parsed_data_pipes, trend, ref)
+    new_EGO(model, model_params, test_config, parsed_data_pipes, trend, ref, areas)
 }
 
-new_EGO <- function(model, model_params, test_config, data_pipes, trend, scales) {
+new_EGO <- function(model, model_params, test_config, data_pipes, trend, scales,
+    areas = "") {
+
     new <- list(
         model = model,
         model_params = model_params,
@@ -82,6 +86,7 @@ new_EGO <- function(model, model_params, test_config, data_pipes, trend, scales)
         trend = trend,
         scales = scales)
     class(new) <- "EGO"
+    attr(new, "codigo_area") <- areas
 
     return(new)
 }
