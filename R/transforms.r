@@ -277,3 +277,34 @@ gen_seasonal_pattern_adder <- function(var = "", time_col = "datahora", by = c()
 
     return(fun)
 }
+
+#' Versao Preliminar Hardcoded Para Testes Simples
+
+gen_quantile_classifier <- function(x, ...) {
+
+    ref <- copy(x)
+    ref[, h := as.numeric(datahora_previsao - datahora_execucao) / 3600]
+
+    means <- ref[, .(mean_tmp = mean(temperatura[h > 23])), by = datahora_execucao]
+    means[, mes := month(datahora_execucao)]
+
+    classes <- means[, c(-1, quantile(mean_tmp, c(.1, .25, .5, .75, .9)), Inf), by = mes]
+
+    rm("ref", "x")
+
+    fun <- function(x) {
+        x <- copy(x)
+        x[, mes := month(datahora_execucao)]
+        x[, h := as.numeric(datahora_previsao - datahora_execucao) / 3600]
+        x <- x[h > 23.5]
+
+        x[, mean := mean(temperatura), by = datahora_execucao]
+        for (m in unique(x$mes)) {
+            v_m <- classes[mes == m, V1]
+            x[mes == m, classe := cut(mean, breaks = v_m, labels = seq_len(length(v_m) - 1))]
+        }
+
+        x <- x[, .(datahora_previsao, classe)]
+        return(x)
+    }
+}
