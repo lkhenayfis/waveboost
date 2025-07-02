@@ -157,17 +157,25 @@ gen_merger_feriado <- function(modo = "simples", pos = TRUE, pre = TRUE, keep = 
 #'     o programa tenha disponiveis durante execucao, sejam elas importadas de dependencias ou 
 #'     declaradas internamente. Adicionalmente, podem ser declaradas funcoes anonimas como string
 #' @param keep outras colunas que podem ser mantidas no dado. Ver Detalhes
+#' @param onehot booleano indicando se as timefeatures adicionadas devem ser codificadas no estilo
+#'     
+#' @param x dado referencia, necessario quando `onehot = TRUE` pois e preciso registrar os niveis
+#'     de encoding originalmente encontrados no dado
 
 gen_timefeature_adder <- function(time_col = "datahora", timefeatures = default_timefeatures(),
-    keep = NULL, ...) {
+    keep = NULL, onehot = FALSE, x, ...) {
 
     f_timefeatures <- sapply(timefeatures, function(tf) eval(parse(text = tf)))
 
     n_timefeatures <- names(timefeatures)
     if (is.null(n_timefeatures)) n_timefeatures <- paste0("timefeature_", seq_along(timefeatures))
 
+    if (onehot) uniques <- lapply(f_timefeatures, function(f) unique(f(x[[time_col]])))
+    rm(x)
+
     fun <- function(x) {
         out <- lapply(f_timefeatures, function(f) f(x[[time_col]]))
+        if (onehot) out <- mapply(out, uniques, FUN = function(o, u) as_onehot(o, u), SIMPLIFY = FALSE)
         names(out) <- n_timefeatures
         out <- as.data.table(out)
         out[[time_col]] <- x[[time_col]]
@@ -191,6 +199,13 @@ default_timefeatures <- function() {
         "wday" = "data.table::wday",
         "hourmin" = "function(x) data.table::hour(x) + data.table::minute(x) / 60"
     )
+}
+
+as_onehot <- function(x, uniques) {
+    out <- lapply(uniques, function(u) as.numeric(x == u))
+    out <- as.data.table(out)
+    names(out) <- paste0("_", uniques)
+    out
 }
 
 #' Gerador De Closure Para Sumario Lagged
