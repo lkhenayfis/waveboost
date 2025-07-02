@@ -19,14 +19,13 @@ parse_single_pipe <- function(raw_pipe) {
     cc[[1]] <- str2lang(cc[[1]])
     raw_pipe$transforms[[1]] <- eval(as.call(cc), parent.frame(3), parent.frame(3))
 
-    l_t[[1]] <- NULL
-    if (length(l_t) >= 1) {
-        x <- do.call(raw_pipe$transforms[[1]], args)
-        for (i in seq_along(l_t)) {
+    if (length(l_t) >= 2) {
+        x <- do.call(raw_pipe$transforms[[1]], args, envir = parent.frame(3))
+        for (i in seq_along(l_t)[-1]) {
             cc <- c(l_t[[i]], list(x = x))
             cc[[1]] <- str2lang(cc[[1]])
-            raw_pipe$transforms[[i + 1]] <- eval(as.call(cc), parent.frame(3), parent.frame(3))
-            x <-  do.call(raw_pipe$transforms[[i + 1]], list(x = x))
+            raw_pipe$transforms[[i]] <- eval(as.call(cc), parent.frame(3), parent.frame(3))
+            x <- do.call(raw_pipe$transforms[[i]], list(x = x))
         }
     }
 
