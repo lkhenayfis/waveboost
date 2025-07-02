@@ -28,9 +28,12 @@ schema <- list(
     tables = list(
         list(name = "areas", uri = "s3://ons-pem-historico/carga/estudos-prevcarga-dessem/areas"),
         list(name = "feriados", uri = "s3://ons-pem-historico/carga/estudos-prevcarga-dessem/feriados"),
-        list(name = "carga_observada", uri = "s3://ons-pem-historico/carga/estudos-prevcarga-dessem/carga_observada"),
-        list(name = "temperatura_observada", uri = "s3://ons-pem-historico/carga/estudos-prevcarga-dessem/temperatura_observada"),
-        list(name = "temperatura_prevista", uri = "s3://ons-pem-historico/carga/estudos-prevcarga-dessem/temperatura_prevista")
+        list(name = "carga_observada",
+            uri = "s3://ons-pem-historico/carga/estudos-prevcarga-dessem/carga_observada"),
+        list(name = "temperatura_observada",
+            uri = "s3://ons-pem-historico/carga/estudos-prevcarga-dessem/temperatura_observada"),
+        list(name = "temperatura_prevista",
+            uri = "s3://ons-pem-historico/carga/estudos-prevcarga-dessem/temperatura_prevista")
     )
 )
 
@@ -123,17 +126,30 @@ jsonlite::write_json(schema, file.path(uri, "schema.json"), auto_unbox = TRUE, p
 uri <- "data/banco/temperatura_observada"
 dir.create(uri)
 
-for (area in areas$codigo_area) {
-    temp <- get_temperatura_historica(area, JANELA)
-    colnames(temp) <- c("id", "datahora", "temperatura")
-    temp <- temp[(datahora >= datahora_inicio) & (datahora <= datahora_fim)]
-    temp[, codigo_area := area]
-    temp[, id := NULL]
-    temp[, temperatura := as.numeric(temperatura)]
-    setcolorder(temp, c("codigo_area", "datahora", "temperatura"))
+#for (area in areas$codigo_area) {
+#    temp <- get_temperatura_historica(area, JANELA)
+#    colnames(temp) <- c("id", "datahora", "temperatura")
+#    temp <- temp[(datahora >= datahora_inicio) & (datahora <= datahora_fim)]
+#    temp[, codigo_area := area]
+#    temp[, id := NULL]
+#    temp[, temperatura := as.numeric(temperatura)]
+#    setcolorder(temp, c("codigo_area", "datahora", "temperatura"))
+#
+#    filename <- paste0("temperatura_observada-codigo_area=", area, ".parquet.gzip")
+#    write_parquet(temp, file.path(uri, filename))
+#}
 
-    filename <- paste0("temperatura_observada-codigo_area=", area, ".parquet.gzip")
-    write_parquet(temp, file.path(uri, filename))
+path <- "/mnt/c/Users/lucas/Downloads/heatindex/heatindex/"
+for (area in areas$codigo_area) {
+    try({
+        temp <- fread(file.path(path, paste0("heatindex_", area, ".csv")), sep = ";", dec = ",")
+        colnames(temp)[1:2] <- c("codigo_area", "datahora")
+        temp <- temp[(datahora >= datahora_inicio) & (datahora <= datahora_fim)]
+        setcolorder(temp, c("codigo_area", "datahora", "temperatura"))
+
+        filename <- paste0("temperatura_observada-codigo_area=", area, ".parquet.gzip")
+        write_parquet(temp, file.path(uri, filename))
+    })
 }
 
 schema <- list(
@@ -144,7 +160,9 @@ schema <- list(
     columns = list(
         list(name = "codigo_area", type = "string"),
         list(name = "datahora", type = "datetime"),
-        list(name = "temperatura", type = "float")
+        list(name = "temperatura", type = "float"),
+        list(name = "rh", type = "float"),
+        list(name = "heatindex", type = "float")
     ),
     partitions = list(list(name = "codigo_area", type = "string"))
 )
