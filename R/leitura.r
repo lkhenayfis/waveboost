@@ -27,7 +27,11 @@ get_temperatura_observada <- function(areas, janela = "2020/2024", conn = .CONEX
     resample(d, 2, expand_right = TRUE)
 }
 
-get_temperatura_prevista <- function(areas, janela = "2020/2024", conn = .CONEXAO_BANCO) {
-    d <- getfromdb(conn, "temperatura_prevista", codigo_area = areas, datahora_execucao = janela)
+get_temperatura_prevista <- function(areas, janela = "2020/2024", origem = "wrf_bam",
+    max_h = 47.5, conn = .CONEXAO_BANCO) {
+
+    d <- getfromdb(conn, "temperatura_prevista", origem = origem, codigo_area = areas,
+        datahora_execucao = janela)
+    d <- d[horizonte <= max_h]
     resample(d, 2, expand_right = TRUE, by = "datahora_execucao")
 }
