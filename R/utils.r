@@ -339,18 +339,20 @@ get_start <- function(hora, vec) {
 #' Facilitadores para padronizar e reescalar dado de maneira mais automatica
 #' 
 #' @param dt data.table para padronizar ou reescalar
-#' @param ignore_classes classes de colunas que serao ignoradas na padronizacao
 #' @param reference_dt data.table previamente padronizado por esta funcao para usar de referencia na
 #'     padronizacao/reescalonamento de \code{dt}
+#' @param center,scale booleanos indicando se deve ser feita centralizacao (media zero) e
+#'     padronizacao (desvio padrao 1). Por padrao sao ambos `TRUE`
+#' @param ignore_classes classes de colunas que serao ignoradas na padronizacao
 
 scale2 <- function(dt, reference_dt = NULL, ...) UseMethod("scale2", reference_dt)
 
-scale2.NULL <- function(dt, reference_dt,
+scale2.NULL <- function(dt, reference_dt, center = TRUE, scale = TRUE,
     ignore_classes = c("character", "factor", "integer", "POSIXt", "Date")) {
 
     ignore_cols <- lapply(dt, inherits, what = ignore_classes)
-    means <- mapply(dt, ignore_cols, FUN = function(x, b) ifelse(b, 0, mean(x)))
-    sds   <- mapply(dt, ignore_cols, FUN = function(x, b) ifelse(b, 1, sd(x)))
+    means <- mapply(dt, ignore_cols, FUN = function(x, b) ifelse(b | !center, 0, mean(x)))
+    sds   <- mapply(dt, ignore_cols, FUN = function(x, b) ifelse(b | !scale,  1, sd(x)))
     scales <- mapply(means, sds, FUN = c, SIMPLIFY = FALSE)
 
     new_scaled_dt(dt, scales, ignore_cols)
