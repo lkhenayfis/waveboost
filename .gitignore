@@ -4,6 +4,7 @@ data/
 out/** */
 data/*parquet.gzip
 creds-prevcarga.r
+creds-cams.r
 .Renviron
 *html
 *jpeg
