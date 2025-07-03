@@ -32,22 +32,19 @@ get_temperatura_historica <- function(area, janela = "1900/3000") {
     return(dt)
 }
 
-get_temperatura_prevista <- function(area, janela = "1900/3000", referencia = 1) {
+get_temperatura_prevista <- function(area, janela = "1900/3000") {
     area <- valida_codigo_area(area)
     id   <- area2id(area)
     janela <- expande_janela(janela, as_date = FALSE)
-    horizontes <- referencia2horizontes(referencia)
 
-    dts <- lapply(horizontes, function(h) TemperaturaPrevistaDelay(id, janela[1], janela[2], h))
+    dts <- lapply(seq(0, 2), function(h) TemperaturaPrevistaDelay(id, janela[1], janela[2], h))
     dts <- lapply(dts, as.data.table)
 
     dts <- rbindlist(dts)
-    dts[, DinReferencia := DinOrigem + referencia * (48 * 1800)]
-    setcolorder(dts, c(1, 2, 5, 3, 4))
 
-    parse_coluna_date(dts, "DinOrigem")
-    parse_coluna_date(dts, "DinReferencia")
-    parse_coluna_posix(dts, "DinOcorrencia")
+    dts[, hora_execucao := hour(DinOrigem)]
+    dts[, horizonte := as.numeric(DinOcorrencia - DinOrigem) / 3600]
+    setorder(dts, horizonte)
 
     return(dts)
 }

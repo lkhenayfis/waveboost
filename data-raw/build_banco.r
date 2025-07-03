@@ -174,17 +174,19 @@ jsonlite::write_json(schema, file.path(uri, "schema.json"), auto_unbox = TRUE, p
 uri <- "data/banco/temperatura_prevista"
 dir.create(uri)
 
+ORIGEM <- "wrf_bam"
 for (area in areas$codigo_area) {
     temp <- get_temperatura_prevista(area, JANELA)
-    temp <- temp[, .SD, .SDcols = c(1, 3, 4, 5)]
-    colnames(temp) <- c("id", "datahora_execucao", "datahora_previsao", "temperatura")
-    temp[, datahora_execucao := as.POSIXct(datahora_execucao, "UTC")]
+    colnames(temp)[1:4] <- c("id", "datahora_execucao", "datahora_previsao", "temperatura")
     temp <- temp[(datahora_execucao >= datahora_inicio) & (datahora_execucao <= datahora_fim)]
     temp[, codigo_area := area]
     temp[, id := NULL]
-    setcolorder(temp, c("codigo_area", "datahora_execucao", "datahora_previsao", "temperatura"))
+    temp[, origem := ORIGEM]
+    setcolorder(temp, c("origem", "codigo_area", "datahora_execucao", "datahora_previsao", "temperatura"))
+    setorder(temp, datahora_execucao, datahora_previsao)
 
-    filename <- paste0("temperatura_prevista-codigo_area=", area, ".parquet.gzip")
+    filename <- paste0("temperatura_prevista-origem=", ORIGEM,
+        "-codigo_area=", area, ".parquet.gzip")
     write_parquet(temp, file.path(uri, filename))
 }
 
@@ -194,12 +196,18 @@ schema <- list(
     uri = "./temperatura_prevista",
     fileType = ".parquet.gzip",
     columns = list(
+        list(name = "origem", type = "string"),
         list(name = "codigo_area", type = "string"),
         list(name = "datahora_execucao", type = "date"),
         list(name = "datahora_previsao", type = "datetime"),
-        list(name = "temperatura", type = "float")
+        list(name = "temperatura", type = "float"),
+        list(name = "hora_execucao", type = "int"),
+        list(name = "horizonte", type = "int")
     ),
-    partitions = list(list(name = "codigo_area", type = "string"))
+    partitions = list(
+        list(name = "origem", type = "string"),
+        list(name = "codigo_area", type = "string")
+    )
 )
 
 jsonlite::write_json(schema, file.path(uri, "schema.json"), auto_unbox = TRUE, pretty = TRUE)
