@@ -207,7 +207,7 @@ default_timefeatures <- function() {
 }
 
 as_onehot <- function(x, uniques) {
-    out <- lapply(uniques, function(u) as.numeric(x == u))
+    out <- lapply(uniques, function(u) as.integer(x == u))
     out <- as.data.table(out)
     names(out) <- paste0("_", uniques)
     out
