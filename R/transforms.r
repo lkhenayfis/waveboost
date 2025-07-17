@@ -78,14 +78,19 @@ gen_dwt_builder_laglead <- function(var_x = "", var_y = "",
                 start = start, step = 48, names = paste0(var_x, "_obs"))
             x <- force_slice_hour(x, "00:00:00")
 
-            out <- merge(x, y)
-            out <- combine_features(out, paste0(var_x, "_obs"), paste0(var_y, "_prev"))
+            y <- merge(x, y)
+            y <- combine_features(y, paste0(var_x, "_obs"), paste0(var_y, "_prev"))
         }
 
-        out <- rolling_subset(out, L, names(out[1]))
-        out <- dwt(out, names(out)[1], filter = "haar")
+        if (roll) {
+            y <- rolling_subset(y, L, names(y[1]))
+            y <- dwt(y, names(y)[1], filter = "haar")
+        } else {
+            y <- dwt(y, names(y)[1], filter = "haar")
+            y <- replicate_slice_day_ahead(y)
+        }
 
-        as.data.table(out)
+        as.data.table(y)
     }
 
     return(fun)
