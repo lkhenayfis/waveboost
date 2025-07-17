@@ -129,6 +129,35 @@ train_EGO <- function(data, model_params, test_config, ...) {
     eval(as.call(call), parent.frame(), parent.frame())
 }
 
+train_EGO_SPLIT <- function(data, model_params, size, frac, where) {
+    if (!missing("frac")) size <- floor(frac * nrow(data))
+
+    if (where == "tail") {
+        training_sample <- data[, seq(.N) < (.N - size + 1)]
+    } else if (where == "head") {
+        training_sample <- data[, seq(.N) > size]
+    }
+
+    dataset_train <- lgb.Dataset(
+        data.matrix(data[training_sample, .SD, .SDcols = -c("index", "cargaglobalcons")]),
+        label = data[training_sample, cargaglobalcons],
+        params = model_params
+    )
+
+    dataset_test <- lgb.Dataset(
+        data.matrix(data[!training_sample, .SD, .SDcols = -c("index", "cargaglobalcons")]),
+        label = data[!training_sample, cargaglobalcons],
+        params = model_params
+    )
+
+    model <- lgb.train(data = dataset_train, params = model_params,
+        nrounds = 5000L, early_stopping_rounds = 50L, eval_freq = 100L,
+        valids = list(valid = dataset_test))
+    attr(model, "CV_score") <- model$best_score
+
+    return(model)
+}
+
 #' Treinamento Testando Por Cross Validation
 #' 
 #' Variante de treino testando o modelo em `nfolds` conjuntos estratificados de validacao
