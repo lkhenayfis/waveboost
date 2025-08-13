@@ -66,6 +66,12 @@ uri <- "data/banco/feriados"
 dir.create(uri)
 
 feriados <- lapply(areas$codigo_area, get_feriados, janela = JANELA)
+feriados <- lapply(feriados, function(d) {
+    aux <- d[dat_diaespecial %between% c("2023-12-24", "2024-01-02")]
+    aux[, dat_diaespecial := dat_diaespecial - 365]
+    d <- rbind(d, aux)
+    setorder(d, dat_diaespecial)
+})
 feriados <- rbindlist(feriados)
 colnames(feriados) <- c("codigo_area", "data", "tipo_dia_especial", "codigo_prevcarga", "codigo_simplificado")
 #feriados <- feriados[(data >= datahora_inicio) & (data <= datahora_fim)]
