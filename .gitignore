@@ -9,4 +9,4 @@ creds-cams.r
 .Renviron
 *html
 *jpeg
-*csv
+./*csv
