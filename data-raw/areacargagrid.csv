@@ -1,0 +1,60 @@
+﻿cod_areacarga;id_subsistema;Prioridade;Região do estado;latitude_0p10;longitude_0p10;latitude_0p25;longitude_0p25
+RS;S;1;capital;-30;-51,2;-30;-51,25
+RS;S;0;santa maria;-29,7;-53,7;-29,75;-53,75
+RS;S;2;canoas;-29,9;-51,1;-30;-51
+SC;S;1;capital;-27,6;-48,5;-27,75;-48,75
+SC;S;2;capital;-27,6;-48,7;-27,75;-48,5
+SC;S;3;oeste - São Miguel do Oeste;-26,7;-53,5;-26,75;-53,5
+PR;S;1;capital;-25,5;-49,2;-25,5;-49,25
+PR;S;2;capital;-25,4;-49,2;-25,5;-49,25
+PR;S;3;centro-oeste - Maringá;-23,4;-51,9;-23,5;-52
+PR;S;0;oeste - Foz do Iguaçu;-25,6;-54,5;-25,5;-54,5
+SP;SE;1;capital;-23,5;-46,6;-23,75;-46,75
+SP;SE;2;capital;-23,6;-46,6;-23,75;-46,75
+SP;SE;0;centro - Bauru;-22,4;-49;-22,5;-49
+SP;SE;0;oeste - Presidente Prudente;-22,1;-51,4;-22,25;-51,5
+SP;SE;0;norte - Riberão Preto;-21,1;-47,8;-21,25;-47,75
+RJ;SE;1;capital;-22,9;-43,2;-23;-43,5
+RJ;SE;2;capital;-22,8;-43,3;-23;-43,25
+ES;SE;1;capital;-20,3;-40,3;-20,25;-40,25
+ES;SE;1;capital;-20,4;-40,3;-20,25;-40,25
+MG;SE;1;capital;-19,9;-43,9;-20;-44
+MG;SE;2;capital;-20;-44;-20;-44
+MS;SE;1;capital;-20,5;-54,7;-20,5;-54,75
+MS;SE;2;capital;-20,5;-54,6;-20,5;-54,75
+MT;SE;1;capital;-15,6;-56,1;-15,5;-56
+MT;SE;2;capital;-15,7;-56,1;-15,5;-56
+GO;SE;1;capital;-16,7;-49,3;-16,75;-49,25
+GO;SE;2;capital;-16,6;-49,2;-16,75;-49,25
+DF;SE;1;capital;-15,8;-47,9;-15,75;-48
+DF;SE;2;capital;-15,8;-48;-15,75;-48
+RO;SE;1;capital;-8,7;-63,9;-8,75;-64
+RO;SE;2;capital;-8,7;-63,8;-8,75;-63,75
+AC;SE;1;capital;-10;-67,8;-10;-67,75
+AC;SE;2;capital;-9,9;-67,8;-10;-67,75
+TO;N;1;capital;-10,3;-48,3;-10,25;-48,25
+TO;N;2;capital;-10,2;-48,3;-10,25;-48,25
+PA;N;1;capital;-1,4;-48,4;-1,5;-48,5
+PA;N;1;capital;-1,4;-48,5;-1,5;-48,5
+AM;N;1;capital;-3,1;-60;-3;-60
+AM;N;2;capital;-3;-60;-3;-60
+AP;N;1;capital;0;-51,1;0;-51
+AP;N;1;capital;0;-51,1;0;-51
+RR;;1;capital;2,8;-60,7;2,75;-60,75
+RR;;1;capital;2,8;-60,7;2,75;-60,75
+MA;N;1;capital;-2,5;-44,2;-2,5;-44,25
+MA;N;2;capital;-2,5;-44,3;-2,5;-44,25
+PI;NE;1;capital;-5,1;-42,8;-5;-42,75
+PI;NE;2;capital;-5;-42,8;-5;-42,75
+CE;NE;1;capital;-3,8;-38,5;-3,75;-38,5
+CE;NE;2;capital;-3,8;-38,6;-3,75;-38,5
+PBRN;NE;1;João Pessoa;-7,2;-34,8;-7,25;-35
+PBRN;NE;1;Natal;-5,8;-35,2;-6;-35,25
+ALPE;NE;1;Recife;-8,1;-34,9;-8,25;-35
+ALPE;NE;1;Maceió;-9,5;-35,8;-9,5;-35,75
+ALPE;NE;2;Petrolina;-9,4;-40,5;-9,5;-40,5
+BASE;NE;1;Salvador;-13;-38,5;-13;-38,5
+BASE;NE;1;Aracaju;-10,9;-37;-11,25;-37,25
+BASE;NE;2;litoral sul da BA - Porto Seguro;-16,4;-39,2;-16,5;-39,25
+BAOE;NE;1;oeste da Bahia - Luís Eduardo Magalhães;-12,2;-45,8;-12,25;-45,75
+BAOE;NE;2;Barreiras;-12,1;-45;-12,25;-45
