@@ -153,5 +153,3 @@ add_timefeatures <- function(reg, timefeatures) {
     out <- cbind(reg, new)
     return(out)
 }
-
-nhour <- function(posix) hour(posix) + minute(posix) / 60 + second(posix) / 3600

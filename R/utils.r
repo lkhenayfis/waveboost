@@ -291,6 +291,10 @@ force_slice_hour <- function(slice, target_hour) {
     return(slice)
 }
 
+#' Converte Hora De POSIX Para Numerico Em [0, 24)
+
+nhour <- function(posix) hour(posix) + minute(posix) / 60 + second(posix) / 3600
+
 #' Subset Em Janela Rolante De Slices
 #' 
 #' Gera slice ampliado a partir de \code{x} por subsets de largura \code{window} em seus elementos
