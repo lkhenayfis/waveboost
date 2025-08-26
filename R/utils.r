@@ -211,6 +211,28 @@ build_lagged_slice <- function(dt, value_col, max_lag,
     return(slice)
 }
 
+#' Desloca Tempos De Slice Para Alvo
+#' 
+#' Auxiliar para realizar o offset, possivelmente vetorial, de indexes para um target
+#' 
+#' `target` sera aplicado diretamente aos indices do slice. Isto significa que `target = 1` num
+#' slice de indices `Date` representa um dia, enquanto num slice de indices `POSIX` representa um
+#' segundo
+#' 
+#' @param slices objeto `slice_artifact`
+#' @param target inteiro indicando offset; Veja Detalhes
+
+offset_slice_to_target <- function(slices, target = 1) {
+    N <- length(target)
+    indexes <- attr(slices, "index")
+
+    vals <- lapply(slices, function(x) rep(x, each = N))
+    indexes <- lapply(indexes, `+`, target)
+    indexes <- Reduce("c", indexes)
+
+    shapeshiftr:::new_slice_artifact(vals, indexes, attr(slice, "L"))
+}
+
 #' Repete Um Slice Para Dia Seguinte
 #' 
 #' Replica um slice 48 vezes, modificando seu indice a cada vez para uma semihora do dia seguinte
