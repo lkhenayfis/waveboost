@@ -46,11 +46,16 @@
 #' Produz uma closure de unico argumento para realizar encoding dwt em dado passado
 
 gen_dwt_builder_lag <- function(var = "", hora_execucao = "07:30:00", L = 64,
-    time_col = "datahora", ...) {
+    time_col = "datahora", step = 48, target = "to_day_ahead", ...) {
+
+    if (is.character(target)) {
+        cc <- list(str2lang(target), hora_execucao)
+        target <- eval(as.call(cc), parent.env(), .GlobalEnv)
+    }
 
     fun <- function(x) {
-        x <- build_lagged_slice(x, var, L, hora_execucao, time_col = time_col)
-        x <- replicate_slice_day_ahead(x)
+        x <- build_lagged_slice(x, var, L, hora_execucao, time_col, step = step)
+        x <- offset_slice_to_target(x, target)
         x <- as.data.table(x)
         x
     }
@@ -218,7 +223,7 @@ as_onehot <- function(x, uniques) {
 #' Produz uma closure de unico argumento para calcular sumario em dado passado
 
 gen_descstats_builder_lag <- function(var = "", L = 1:48, time_col = "datahora",
-    funs = c("mean", "max", "min"), ...) {
+    funs = c("mean", "max", "min"), target = "to_day_ahead", ...) {
 
     calls <- lapply(funs, function(f) as.call(c(list(str2lang(f)), list(...))))
 
@@ -232,10 +237,15 @@ gen_descstats_builder_lag <- function(var = "", L = 1:48, time_col = "datahora",
         Reduce(merge, out)
     }
 
+    if (is.character(target)) {
+        cc <- list(str2lang(target), hora_execucao)
+        target <- eval(as.call(cc), parent.env(), .GlobalEnv)
+    }
+
     fun <- function(x) {
         # usa 00:00:00 como hora execucao so para ficarem argumentos mais interpretaveis
         x <- build_lagged_slice(x, var, L, "00:00:00", time_col, apply_funs)
-        x <- replicate_slice_day_ahead(x)
+        x <- offset_slice_to_target(x, target)
         x <- as.data.table(x)
         x
     }

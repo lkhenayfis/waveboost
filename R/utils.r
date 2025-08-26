@@ -189,6 +189,16 @@ resample_linear <- function(x, times, expand_right, ...) {
 
 # BUILD DE REGRESSORES -----------------------------------------------------------------------------
 
+#' Short-Hand Para Target De [`offset_slice_target`]
+#' 
+#' Retorna vetor de offsets para levar uma `hora` a meia noite a 23:30 do dia seguinte
+#' 
+#' @param hora uma string indicando hora no formato `"%H:%M:%S"`
+
+to_day_ahead <- function(hora) {
+    seq(24 - hora_str2num(hora), 47.5 - hora_str2num(hora), .5) * 3600
+}
+
 #' Gera Slices De Dado Observado
 #' 
 #' Auxiliar para gerar e transformar slices de uma variavel observada
